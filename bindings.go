@@ -12,6 +12,10 @@ import "unsafe"
 
 type Type C.duckdb_type
 
+func (t *Type) data() C.duckdb_type {
+	return C.duckdb_type(*t)
+}
+
 const (
 	TypeInvalid     Type = C.DUCKDB_TYPE_INVALID
 	TypeBoolean     Type = C.DUCKDB_TYPE_BOOLEAN
@@ -180,6 +184,12 @@ type Date struct {
 	Days int32
 }
 
+func (date *Date) data() C.duckdb_date {
+	var result C.duckdb_date
+	result.days = C.int32_t(date.Days)
+	return result
+}
+
 type DateStruct struct {
 	Year  int32
 	Month int8
@@ -188,6 +198,12 @@ type DateStruct struct {
 
 type Time struct {
 	Micros int64
+}
+
+func (t *Time) data() C.duckdb_time {
+	var result C.duckdb_time
+	result.micros = C.int64_t(t.Micros)
+	return result
 }
 
 type TimeStruct struct {
@@ -210,6 +226,12 @@ type Timestamp struct {
 	Micros int64
 }
 
+func (ts *Timestamp) data() C.duckdb_timestamp {
+	var result C.duckdb_timestamp
+	result.micros = C.int64_t(ts.Micros)
+	return result
+}
+
 type TimestampStruct struct {
 	Date DateStruct
 	Time TimeStruct
@@ -221,9 +243,24 @@ type Interval struct {
 	Micros int64
 }
 
+func (interval *Interval) data() C.duckdb_interval {
+	var result C.duckdb_interval
+	result.months = C.int32_t(interval.Months)
+	result.days = C.int32_t(interval.Days)
+	result.micros = C.int64_t(interval.Micros)
+	return result
+}
+
 type HugeInt struct {
 	Lower uint64
 	Upper int64
+}
+
+func (hugeInt *HugeInt) data() C.duckdb_hugeint {
+	var result C.duckdb_hugeint
+	result.lower = C.uint64_t(hugeInt.Lower)
+	result.upper = C.uint64_t(hugeInt.Upper)
+	return result
 }
 
 type UHugeInt struct {
@@ -235,6 +272,14 @@ type Decimal struct {
 	Width uint8
 	Scale uint8
 	Value HugeInt
+}
+
+func (decimal *Decimal) data() C.duckdb_decimal {
+	var result C.duckdb_decimal
+	result.width = C.uint8_t(decimal.Width)
+	result.scale = C.uint8_t(decimal.Scale)
+	result.value = decimal.Value.data()
+	return result
 }
 
 type QueryProgressType struct {
@@ -634,32 +679,127 @@ func ParamType(preparedStmt PreparedStatement, index IdxT) Type {
 
 //#define duckdb_param_logical_type                      duckdb_ext_api.duckdb_param_logical_type
 //#define duckdb_clear_bindings                          duckdb_ext_api.duckdb_clear_bindings
-//#define duckdb_prepared_statement_type                 duckdb_ext_api.duckdb_prepared_statement_type
+
+func PreparedStatementType(preparedStmt PreparedStatement) StatementType {
+	t := C.duckdb_prepared_statement_type(preparedStmt.data())
+	return StatementType(t)
+}
+
 //#define duckdb_bind_value                              duckdb_ext_api.duckdb_bind_value
 //#define duckdb_bind_parameter_index                    duckdb_ext_api.duckdb_bind_parameter_index
-//#define duckdb_bind_boolean                            duckdb_ext_api.duckdb_bind_boolean
-//#define duckdb_bind_int8                               duckdb_ext_api.duckdb_bind_int8
-//#define duckdb_bind_int16                              duckdb_ext_api.duckdb_bind_int16
-//#define duckdb_bind_int32                              duckdb_ext_api.duckdb_bind_int32
-//#define duckdb_bind_int64                              duckdb_ext_api.duckdb_bind_int64
-//#define duckdb_bind_hugeint                            duckdb_ext_api.duckdb_bind_hugeint
+
+func BindBoolean(preparedStmt PreparedStatement, index IdxT, v bool) State {
+	state := C.duckdb_bind_boolean(preparedStmt.data(), index.data(), C.bool(v))
+	return State(state)
+}
+
+func BindInt8(preparedStmt PreparedStatement, index IdxT, v int8) State {
+	state := C.duckdb_bind_int8(preparedStmt.data(), index.data(), C.int8(v))
+	return State(state)
+}
+
+func BindInt16(preparedStmt PreparedStatement, index IdxT, v int16) State {
+	state := C.duckdb_bind_int16(preparedStmt.data(), index.data(), C.int16(v))
+	return State(state)
+}
+
+func BindInt32(preparedStmt PreparedStatement, index IdxT, v int32) State {
+	state := C.duckdb_bind_int32(preparedStmt.data(), index.data(), C.int32(v))
+	return State(state)
+}
+
+func BindInt64(preparedStmt PreparedStatement, index IdxT, v int64) State {
+	state := C.duckdb_bind_int64(preparedStmt.data(), index.data(), C.int64(v))
+	return State(state)
+}
+
+func BindHugeInt(preparedStmt PreparedStatement, index IdxT, v HugeInt) State {
+	state := C.duckdb_bind_hugeint(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
 //#define duckdb_bind_uhugeint                           duckdb_ext_api.duckdb_bind_uhugeint
-//#define duckdb_bind_decimal                            duckdb_ext_api.duckdb_bind_decimal
-//#define duckdb_bind_uint8                              duckdb_ext_api.duckdb_bind_uint8
-//#define duckdb_bind_uint16                             duckdb_ext_api.duckdb_bind_uint16
-//#define duckdb_bind_uint32                             duckdb_ext_api.duckdb_bind_uint32
-//#define duckdb_bind_uint64                             duckdb_ext_api.duckdb_bind_uint64
-//#define duckdb_bind_float                              duckdb_ext_api.duckdb_bind_float
-//#define duckdb_bind_double                             duckdb_ext_api.duckdb_bind_double
-//#define duckdb_bind_date                               duckdb_ext_api.duckdb_bind_date
-//#define duckdb_bind_time                               duckdb_ext_api.duckdb_bind_time
-//#define duckdb_bind_timestamp                          duckdb_ext_api.duckdb_bind_timestamp
+
+func BindDecimal(preparedStmt PreparedStatement, index IdxT, v Decimal) State {
+	state := C.duckdb_bind_decimal(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
+func BindUInt8(preparedStmt PreparedStatement, index IdxT, v uint8) State {
+	state := C.duckdb_bind_uint8(preparedStmt.data(), index.data(), C.uint8(v))
+	return State(state)
+}
+
+func BindUInt16(preparedStmt PreparedStatement, index IdxT, v uint16) State {
+	state := C.duckdb_bind_uint16(preparedStmt.data(), index.data(), C.uint16(v))
+	return State(state)
+}
+
+func BindUInt32(preparedStmt PreparedStatement, index IdxT, v uint32) State {
+	state := C.duckdb_bind_uint32(preparedStmt.data(), index.data(), C.uint32(v))
+	return State(state)
+}
+
+func BindUInt64(preparedStmt PreparedStatement, index IdxT, v uint64) State {
+	state := C.duckdb_bind_uint64(preparedStmt.data(), index.data(), C.uint64(v))
+	return State(state)
+}
+
+func BindFloat(preparedStmt PreparedStatement, index IdxT, v float32) State {
+	state := C.duckdb_bind_float(preparedStmt.data(), index.data(), C.float(v))
+	return State(state)
+}
+
+func BindDouble(preparedStmt PreparedStatement, index IdxT, v float64) State {
+	state := C.duckdb_bind_double(preparedStmt.data(), index.data(), C.double(v))
+	return State(state)
+}
+
+func BindDate(preparedStmt PreparedStatement, index IdxT, v Date) State {
+	state := C.duckdb_bind_date(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
+func BindTime(preparedStmt PreparedStatement, index IdxT, v Time) State {
+	state := C.duckdb_bind_time(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
+func BindTimestamp(preparedStmt PreparedStatement, index IdxT, v Timestamp) State {
+	state := C.duckdb_bind_timestamp(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
 //#define duckdb_bind_timestamp_tz                       duckdb_ext_api.duckdb_bind_timestamp_tz
-//#define duckdb_bind_interval                           duckdb_ext_api.duckdb_bind_interval
-//#define duckdb_bind_varchar                            duckdb_ext_api.duckdb_bind_varchar
+
+func BindInterval(preparedStmt PreparedStatement, index IdxT, v Interval) State {
+	state := C.duckdb_bind_interval(preparedStmt.data(), index.data(), v.data())
+	return State(state)
+}
+
+func BindVarchar(preparedStmt PreparedStatement, index IdxT, v string) State {
+	cStr := C.CString(v)
+	defer Free(unsafe.Pointer(cStr))
+
+	state := C.duckdb_bind_varchar(preparedStmt.data(), index.data(), cStr)
+	return State(state)
+}
+
 //#define duckdb_bind_varchar_length                     duckdb_ext_api.duckdb_bind_varchar_length
-//#define duckdb_bind_blob                               duckdb_ext_api.duckdb_bind_blob
-//#define duckdb_bind_null                               duckdb_ext_api.duckdb_bind_null
+
+func BindBlob(preparedStmt PreparedStatement, index IdxT, v []byte) State {
+	cBytes := C.CBytes(v)
+	defer Free(unsafe.Pointer(cBytes))
+
+	state := C.duckdb_bind_blob(preparedStmt.data(), index.data(), cBytes, IdxT(len(v)))
+	return State(state)
+}
+
+func BindNull(preparedStmt PreparedStatement, index IdxT) State {
+	state := C.duckdb_bind_null(preparedStmt.data(), index.data())
+	return State(state)
+}
+
 //#define duckdb_execute_prepared                        duckdb_ext_api.duckdb_execute_prepared
 
 func ExtractStatements(conn Connection, query string, outExtractedStmts *ExtractedStatements) IdxT {
@@ -798,16 +938,102 @@ func GetMapValue(v Value, index IdxT) Value {
 //#define duckdb_create_enum_value                       duckdb_ext_api.duckdb_create_enum_value
 //#define duckdb_get_enum_value                          duckdb_ext_api.duckdb_get_enum_value
 //#define duckdb_get_struct_child                        duckdb_ext_api.duckdb_get_struct_child
-//#define duckdb_create_logical_type                     duckdb_ext_api.duckdb_create_logical_type
+
+func CreateLogicalType(t Type) LogicalType {
+	logicalType := C.duckdb_create_logical_type(t.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
 //#define duckdb_logical_type_get_alias                  duckdb_ext_api.duckdb_logical_type_get_alias
 //#define duckdb_logical_type_set_alias                  duckdb_ext_api.duckdb_logical_type_set_alias
-//#define duckdb_create_list_type                        duckdb_ext_api.duckdb_create_list_type
-//#define duckdb_create_array_type                       duckdb_ext_api.duckdb_create_array_type
-//#define duckdb_create_map_type                         duckdb_ext_api.duckdb_create_map_type
+
+func CreateListType(child LogicalType) LogicalType {
+	logicalType := C.duckdb_create_list_type(child.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateArrayType(child LogicalType, size IdxT) LogicalType {
+	logicalType := C.duckdb_create_array_type(child.data(), size.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateMapType(key LogicalType, value LogicalType) LogicalType {
+	logicalType := C.duckdb_create_map_type(key.data(), value.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
 //#define duckdb_create_union_type                       duckdb_ext_api.duckdb_create_union_type
-//#define duckdb_create_struct_type                      duckdb_ext_api.duckdb_create_struct_type
-//#define duckdb_create_enum_type                        duckdb_ext_api.duckdb_create_enum_type
-//#define duckdb_create_decimal_type                     duckdb_ext_api.duckdb_create_decimal_type
+
+func CreateStructType(types []LogicalType, names []string) LogicalType {
+	// FIXME: unify code with other slice alloc functions.
+
+	count := len(types)
+	size := C.size_t(unsafe.Sizeof(C.duckdb_logical_type(nil)))
+	typesSlice := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * size))
+
+	size = C.size_t(unsafe.Sizeof((*C.char)(nil)))
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * size))
+
+	for i, t := range types {
+		(*typesSlice)[i] = t.data()
+	}
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+
+	cTypes := (*C.duckdb_logical_type)(unsafe.Pointer(typesSlice))
+	cNames := (**C.char)(unsafe.Pointer(namesSlice))
+	logicalType := C.duckdb_create_struct_type(cTypes, cNames, C.idx_t(count))
+
+	for i := 0; i < count; i++ {
+		C.duckdb_destroy_logical_type(&typesSlice[i])
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
+	Free(unsafe.Pointer(typesSlice))
+	Free(unsafe.Pointer(namesSlice))
+
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateEnumType(names []string) LogicalType {
+	// FIXME: unify code with other slice alloc functions.
+
+	count := len(names)
+	size := C.size_t(unsafe.Sizeof((*C.char)(nil)))
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * size))
+
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	cNames := (**C.char)(unsafe.Pointer(namesSlice))
+	logicalType := C.duckdb_create_enum_type(cNames, C.idx_t(count))
+
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
+	Free(unsafe.Pointer(namesSlice))
+
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateDecimalType(width uint8, scale uint8) LogicalType {
+	logicalType := C.duckdb_create_decimal_type(C.uint8_t(width), C.uint8_t(scale))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
 
 func GetTypeId(logicalType LogicalType) Type {
 	t := C.duckdb_get_type_id(logicalType.data())
@@ -1257,6 +1483,8 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 // ------------------------------------------------------------------ //
 
 func MallocLogicalTypeSlice(count IdxT) (unsafe.Pointer, []LogicalType) {
+	// FIXME: unify code with other slice alloc functions.
+
 	var dummy C.duckdb_logical_type
 	size := C.size_t(unsafe.Sizeof(dummy))
 
