@@ -208,20 +208,76 @@ func DateSetDays(date *Date, days int32) {
 	date.days = C.int32_t(days)
 }
 
+func DateStructGetYear(dateStruct *DateStruct) int32 {
+	return int32(dateStruct.year)
+}
+
+func DateStructGetMonth(dateStruct *DateStruct) int8 {
+	return int8(dateStruct.month)
+}
+
+func DateStructGetDay(dateStruct *DateStruct) int8 {
+	return int8(dateStruct.day)
+}
+
+func TimeGetMicros(ti *Time) int64 {
+	return int64(ti.micros)
+}
+
 func TimeSetMicros(ti *Time, micros int64) {
 	ti.micros = C.int64_t(micros)
+}
+
+func TimeStructGetHour(ti *TimeStruct) int8 {
+	return int8(ti.hour)
+}
+
+func TimeStructGetMinute(ti *TimeStruct) int8 {
+	return int8(ti.min)
+}
+
+func TimeStructGetSecond(ti *TimeStruct) int8 {
+	return int8(ti.sec)
+}
+
+func TimeStructGetMicros(ti *TimeStruct) int32 {
+	return int32(ti.micros)
+}
+
+func TimeTZStructGetTimeStruct(ti *TimeTZStruct) TimeStruct {
+	return TimeStruct(ti.time)
+}
+
+func TimeTZStructGetOffset(ti *TimeTZStruct) int32 {
+	return int32(ti.offset)
+}
+
+func TimestampGetMicros(ts *Timestamp) int64 {
+	return int64(ts.micros)
 }
 
 func TimestampSetMicros(ts *Timestamp, micros int64) {
 	ts.micros = C.int64_t(micros)
 }
 
+func IntervalGetMonths(interval *Interval) int32 {
+	return int32(interval.months)
+}
+
 func IntervalSetMonths(interval *Interval, months int32) {
 	interval.months = C.int32_t(months)
 }
 
+func IntervalGetDays(interval *Interval) int32 {
+	return int32(interval.days)
+}
+
 func IntervalSetDays(interval *Interval, days int32) {
 	interval.days = C.int32_t(days)
+}
+
+func IntervalGetMicros(interval *Interval) int64 {
+	return int64(interval.micros)
 }
 
 func IntervalSetMicros(interval *Interval, micros int64) {
@@ -417,7 +473,14 @@ func (set *ScalarFunctionSet) data() C.duckdb_scalar_function_set {
 // *duckdb_aggregate_combine_t
 // *duckdb_aggregate_finalize_t
 
-// *duckdb_table_function
+// TableFunction wraps *duckdb_table_function.
+type TableFunction struct {
+	Ptr unsafe.Pointer
+}
+
+func (f *TableFunction) data() C.duckdb_table_function {
+	return C.duckdb_table_function(f.Ptr)
+}
 
 // BindInfo wraps *duckdb_bind_info.
 type BindInfo struct {
@@ -445,7 +508,14 @@ func (info *InitInfo) data() C.duckdb_init_info {
 
 // *duckdb_cast_function_t
 
-// *duckdb_replacement_scan_info
+// ReplacementScanInfo wraps *duckdb_replacement_scan.
+type ReplacementScanInfo struct {
+	Ptr unsafe.Pointer
+}
+
+func (info *ReplacementScanInfo) data() C.duckdb_replacement_scan_info {
+	return C.duckdb_replacement_scan_info(info.Ptr)
+}
 
 // *duckdb_replacement_callback_t
 
@@ -645,7 +715,11 @@ func VectorSize() uint64 {
 // Date Time Timestamp Helpers
 // ------------------------------------------------------------------ //
 
-// duckdb_from_date
+func FromDate(date Date) DateStruct {
+	dateStruct := C.duckdb_from_date(C.duckdb_date(date))
+	return DateStruct(dateStruct)
+}
+
 // duckdb_to_date
 // duckdb_is_finite_date
 // duckdb_from_time
@@ -655,7 +729,11 @@ func CreateTimeTZ(micros int64, offset int32) TimeTZ {
 	return TimeTZ(timeTZ)
 }
 
-// duckdb_from_time_tz
+func FromTimeTZ(ti TimeTZ) TimeTZStruct {
+	timeTZStruct := C.duckdb_from_time_tz(C.duckdb_time_tz(ti))
+	return TimeTZStruct(timeTZStruct)
+}
+
 // duckdb_to_time
 // duckdb_from_timestamp
 // duckdb_to_timestamp
@@ -929,7 +1007,15 @@ func DestroyValue(v *Value) {
 	v.Ptr = nil
 }
 
-// duckdb_create_varchar
+func CreateVarchar(str string) Value {
+	cStr := C.CString(str)
+	defer Free(unsafe.Pointer(cStr))
+	v := C.duckdb_create_varchar(cStr)
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
 // duckdb_create_varchar_length
 // duckdb_create_bool
 // duckdb_create_int8
@@ -939,7 +1025,14 @@ func DestroyValue(v *Value) {
 // duckdb_create_int32
 // duckdb_create_uint32
 // duckdb_create_uint64
-// duckdb_create_int64
+
+func CreateInt64(val int64) Value {
+	v := C.duckdb_create_int64(C.int64_t(val))
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
 // duckdb_create_hugeint
 // duckdb_create_uhugeint
 // duckdb_create_varint
@@ -965,30 +1058,101 @@ func CreateTimeTZValue(timeTZ TimeTZ) Value {
 // duckdb_create_blob
 // duckdb_create_bit
 // duckdb_create_uuid
-// duckdb_get_bool
-// duckdb_get_int8
-// duckdb_get_uint8
-// duckdb_get_int16
-// duckdb_get_uint16
-// duckdb_get_int32
-// duckdb_get_uint32
-// duckdb_get_int64
-// duckdb_get_uint64
-// duckdb_get_hugeint
+
+func GetBool(v Value) bool {
+	val := C.duckdb_get_bool(v.data())
+	return bool(val)
+}
+
+func GetInt8(v Value) int8 {
+	val := C.duckdb_get_int8(v.data())
+	return int8(val)
+}
+
+func GetUInt8(v Value) uint8 {
+	val := C.duckdb_get_uint8(v.data())
+	return uint8(val)
+}
+
+func GetInt16(v Value) int16 {
+	val := C.duckdb_get_int16(v.data())
+	return int16(val)
+}
+
+func GetUInt16(v Value) uint16 {
+	val := C.duckdb_get_uint16(v.data())
+	return uint16(val)
+}
+
+func GetInt32(v Value) int32 {
+	val := C.duckdb_get_int32(v.data())
+	return int32(val)
+}
+
+func GetUInt32(v Value) uint32 {
+	val := C.duckdb_get_uint32(v.data())
+	return uint32(val)
+}
+
+func GetInt64(v Value) int64 {
+	val := C.duckdb_get_int64(v.data())
+	return int64(val)
+}
+
+func GetUInt64(v Value) uint64 {
+	val := C.duckdb_get_uint64(v.data())
+	return uint64(val)
+}
+
+func GetHugeInt(v Value) HugeInt {
+	val := C.duckdb_get_hugeint(v.data())
+	return HugeInt(val)
+}
+
 // duckdb_get_uhugeint
 // duckdb_get_varint
 // duckdb_get_decimal
-// duckdb_get_float
-// duckdb_get_double
-// duckdb_get_date
-// duckdb_get_time
-// duckdb_get_time_tz
-// duckdb_get_timestamp
+
+func GetFloat(v Value) float32 {
+	val := C.duckdb_get_float(v.data())
+	return float32(val)
+}
+
+func GetDouble(v Value) float64 {
+	val := C.duckdb_get_double(v.data())
+	return float64(val)
+}
+
+func GetDate(v Value) Date {
+	val := C.duckdb_get_date(v.data())
+	return Date(val)
+}
+
+func GetTime(v Value) Time {
+	val := C.duckdb_get_time(v.data())
+	return Time(val)
+}
+
+func GetTimeTZ(v Value) TimeTZ {
+	val := C.duckdb_get_time_tz(v.data())
+	return TimeTZ(val)
+}
+
+func GetTimestamp(v Value) Timestamp {
+	val := C.duckdb_get_timestamp(v.data())
+	return Timestamp(val)
+}
+
 // duckdb_get_timestamp_tz
 // duckdb_get_timestamp_s
 // duckdb_get_timestamp_ms
 // duckdb_get_timestamp_ns
-// duckdb_get_interval
+
+func GetInterval(v Value) Interval {
+	val := C.duckdb_get_interval(v.data())
+	return Interval(val)
+}
+
 // duckdb_get_value_type
 // duckdb_get_blob
 // duckdb_get_bit
@@ -1131,10 +1295,26 @@ func DecimalScale(logicalType LogicalType) uint8 {
 	return uint8(scale)
 }
 
-// duckdb_decimal_internal_type
-// duckdb_enum_internal_type
-// duckdb_enum_dictionary_size
-// duckdb_enum_dictionary_value
+func DecimalInternalType(logicalType LogicalType) Type {
+	t := C.duckdb_decimal_internal_type(logicalType.data())
+	return Type(t)
+}
+
+func EnumInternalType(logicalType LogicalType) Type {
+	t := C.duckdb_enum_internal_type(logicalType.data())
+	return Type(t)
+}
+
+func EnumDictionarySize(logicalType LogicalType) uint32 {
+	size := C.duckdb_enum_dictionary_size(logicalType.data())
+	return uint32(size)
+}
+
+func EnumDictionaryValue(logicalType LogicalType, index uint64) string {
+	str := C.duckdb_enum_dictionary_value(logicalType.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(str))
+	return C.GoString(str)
+}
 
 func ListTypeChildType(logicalType LogicalType) LogicalType {
 	child := C.duckdb_list_type_child_type(logicalType.data())
@@ -1315,7 +1495,12 @@ func ArrayVectorGetChild(vec Vector) Vector {
 
 // duckdb_validity_row_is_valid
 // duckdb_validity_set_row_validity
-// duckdb_validity_set_row_invalid
+
+func ValiditySetRowInvalid(maskPtr unsafe.Pointer, row uint64) {
+	mask := (*C.uint64_t)(unsafe.Pointer(maskPtr))
+	C.duckdb_validity_set_row_invalid(mask, C.idx_t(row))
+}
+
 // duckdb_validity_set_row_valid
 
 // ------------------------------------------------------------------ //
@@ -1438,18 +1623,68 @@ func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 // Table Functions
 // ------------------------------------------------------------------ //
 
-// duckdb_create_table_function
-// duckdb_destroy_table_function
-// duckdb_table_function_set_name
-// duckdb_table_function_add_parameter
-// duckdb_table_function_add_named_parameter
-// duckdb_table_function_set_extra_info
-// duckdb_table_function_set_bind
-// duckdb_table_function_set_init
-// duckdb_table_function_set_local_init
-// duckdb_table_function_set_function
-// duckdb_table_function_supports_projection_pushdown
-// duckdb_register_table_function
+func CreateTableFunction() TableFunction {
+	f := C.duckdb_create_table_function()
+	return TableFunction{
+		Ptr: unsafe.Pointer(f),
+	}
+}
+
+func DestroyTableFunction(f *TableFunction) {
+	data := f.data()
+	C.duckdb_destroy_table_function(&data)
+	f.Ptr = nil
+}
+
+func TableFunctionSetName(f TableFunction, name string) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_table_function_set_name(f.data(), cName)
+}
+
+func TableFunctionAddParameter(f TableFunction, logicalType LogicalType) {
+	C.duckdb_table_function_add_parameter(f.data(), logicalType.data())
+}
+
+func TableFunctionAddNamedParameter(f TableFunction, name string, logicalType LogicalType) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_table_function_add_named_parameter(f.data(), cName, logicalType.data())
+}
+
+func TableFunctionSetExtraInfo(f TableFunction, extraInfoPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_table_function_set_extra_info(f.data(), extraInfoPtr, callback)
+}
+
+func TableFunctionSetBind(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_bind_t(callbackPtr)
+	C.duckdb_table_function_set_bind(f.data(), callback)
+}
+
+func TableFunctionSetInit(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_init_t(callbackPtr)
+	C.duckdb_table_function_set_init(f.data(), callback)
+}
+
+func TableFunctionSetLocalInit(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_init_t(callbackPtr)
+	C.duckdb_table_function_set_local_init(f.data(), callback)
+}
+
+func TableFunctionSetFunction(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_t(callbackPtr)
+	C.duckdb_table_function_set_function(f.data(), callback)
+}
+
+func TableFunctionSupportsProjectionPushdown(f TableFunction, pushdown bool) {
+	C.duckdb_table_function_supports_projection_pushdown(f.data(), C.bool(pushdown))
+}
+
+func RegisterTableFunction(conn Connection, f TableFunction) State {
+	state := C.duckdb_register_table_function(conn.data(), f.data())
+	return State(state)
+}
 
 // ------------------------------------------------------------------ //
 // Table Function Bind
@@ -1512,7 +1747,10 @@ func InitGetBindData(info InitInfo) unsafe.Pointer {
 	return unsafe.Pointer(ptr)
 }
 
-// duckdb_init_set_init_data
+func InitSetInitData(info InitInfo, initDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_init_set_init_data(info.data(), initDataPtr, callback)
+}
 
 func InitGetColumnCount(info InitInfo) uint64 {
 	count := C.duckdb_init_get_column_count(info.data())
@@ -1524,7 +1762,10 @@ func InitGetColumnIndex(info InitInfo, index uint64) uint64 {
 	return uint64(colIndex)
 }
 
-// duckdb_init_set_max_threads
+func InitSetMaxThreads(info InitInfo, max uint64) {
+	C.duckdb_init_set_max_threads(info.data(), C.idx_t(max))
+}
+
 // duckdb_init_set_error
 
 // ------------------------------------------------------------------ //
@@ -1532,19 +1773,50 @@ func InitGetColumnIndex(info InitInfo, index uint64) uint64 {
 // ------------------------------------------------------------------ //
 
 // duckdb_function_get_extra_info
-// duckdb_function_get_bind_data
+
+func FunctionGetBindData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_bind_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
 // duckdb_function_get_init_data
-// duckdb_function_get_local_init_data
-// duckdb_function_set_error
+
+func FunctionGetLocalInitData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_local_init_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func FunctionSetError(info FunctionInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_function_set_error(info.data(), cErr)
+}
 
 // ------------------------------------------------------------------ //
 // Replacement Scans
 // ------------------------------------------------------------------ //
 
-// duckdb_add_replacement_scan
-// duckdb_replacement_scan_set_function_name
-// duckdb_replacement_scan_add_parameter
-// duckdb_replacement_scan_set_error
+func AddReplacementScan(db Database, callbackPtr unsafe.Pointer, extraData unsafe.Pointer, deleteCallbackPtr unsafe.Pointer) {
+	callback := C.duckdb_replacement_callback_t(callbackPtr)
+	deleteCallback := C.duckdb_delete_callback_t(deleteCallbackPtr)
+	C.duckdb_add_replacement_scan(db.data(), callback, extraData, deleteCallback)
+}
+
+func ReplacementScanSetFunctionName(info ReplacementScanInfo, name string) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_replacement_scan_set_function_name(info.data(), cName)
+}
+
+func ReplacementScanAddParameter(info ReplacementScanInfo, v Value) {
+	C.duckdb_replacement_scan_add_parameter(info.data(), v.data())
+}
+
+func ReplacementScanSetError(info ReplacementScanInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_replacement_scan_set_error(info.data(), cErr)
+}
 
 // ------------------------------------------------------------------ //
 // Profiling Info
