@@ -199,9 +199,9 @@ type (
 	UHugeInt          C.duckdb_uhugeint
 	Decimal           C.duckdb_decimal
 	QueryProgressType C.duckdb_query_progress_type
-	// duckdb_string_t
-	ListEntry C.duckdb_list_entry
-	Column    C.duckdb_column
+	StringT           C.duckdb_string_t
+	ListEntry         C.duckdb_list_entry
+	Column            C.duckdb_column
 )
 
 func DateSetDays(date *Date, days int32) {
@@ -298,6 +298,22 @@ func HugeIntGetUpper(hugeInt *HugeInt) int64 {
 
 func HugeIntSetUpper(hugeInt *HugeInt, upper int64) {
 	hugeInt.upper = C.int64_t(upper)
+}
+
+func ListEntryGetOffset(entry *ListEntry) uint64 {
+	return uint64(entry.offset)
+}
+
+func ListEntrySetOffset(entry *ListEntry, offset uint64) {
+	entry.offset = C.uint64_t(offset)
+}
+
+func ListEntryGetLength(entry *ListEntry) uint64 {
+	return uint64(entry.length)
+}
+
+func ListEntrySetLength(entry *ListEntry, length uint64) {
+	entry.length = C.uint64_t(length)
 }
 
 // ------------------------------------------------------------------ //
@@ -707,9 +723,22 @@ func VectorSize() uint64 {
 	return uint64(size)
 }
 
-// duckdb_string_is_inlined
-// duckdb_string_t_length
-// duckdb_string_t_data
+func StringIsInlined(strT StringT) bool {
+	isInlined := C.duckdb_string_is_inlined(C.duckdb_string_t(strT))
+	return bool(isInlined)
+}
+
+func StringTLength(strT StringT) uint32 {
+	length := C.duckdb_string_t_length(C.duckdb_string_t(strT))
+	return uint32(length)
+}
+
+func StringTData(strT *StringT) string {
+	str := C.duckdb_string_t(*strT)
+	cStr := C.duckdb_string_t_data(&str)
+	defer Free(unsafe.Pointer(cStr))
+	return C.GoString(cStr)
+}
 
 // ------------------------------------------------------------------ //
 // Date Time Timestamp Helpers
@@ -1450,8 +1479,17 @@ func VectorEnsureValidityWritable(vec Vector) {
 	C.duckdb_vector_ensure_validity_writable(vec.data())
 }
 
-// duckdb_vector_assign_string_element
-// duckdb_vector_assign_string_element_len
+func VectorAssignStringElement(vec Vector, index uint64, str string) {
+	cStr := C.CString(str)
+	defer Free(unsafe.Pointer(cStr))
+	C.duckdb_vector_assign_string_element(vec.data(), C.idx_t(index), cStr)
+}
+
+func VectorAssignStringElementLen(vec Vector, index uint64, blob []byte, len uint64) {
+	cBytes := (*C.char)(C.CBytes(blob))
+	defer Free(unsafe.Pointer(cBytes))
+	C.duckdb_vector_assign_string_element_len(vec.data(), C.idx_t(index), cBytes, C.idx_t(len))
+}
 
 func ListVectorGetChild(vec Vector) Vector {
 	child := C.duckdb_list_vector_get_child(vec.data())
@@ -2091,6 +2129,14 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 // ------------------------------------------------------------------ //
 // Go Bindings Helper
 // ------------------------------------------------------------------ //
+
+func ValidityMaskValueIsValid(maskPtr unsafe.Pointer, index uint64) bool {
+	entryIdx := index / 64
+	idxInEntry := index % 64
+	slice := (*[1 << 31]C.uint64_t)(maskPtr)
+	isValid := slice[entryIdx] & (C.uint64_t(1) << idxInEntry)
+	return uint64(isValid) == 1
+}
 
 const (
 	logicalTypeSize = C.size_t(unsafe.Sizeof((C.duckdb_logical_type)(nil)))
