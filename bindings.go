@@ -734,10 +734,12 @@ func StringTLength(strT StringT) uint32 {
 }
 
 func StringTData(strT *StringT) string {
-	str := C.duckdb_string_t(*strT)
-	cStr := C.duckdb_string_t_data(&str)
-	defer Free(unsafe.Pointer(cStr))
-	return C.GoString(cStr)
+	cStr := C.duckdb_string_t(*strT)
+	length := StringTLength(*strT)
+	if StringIsInlined(*strT) {
+		return string(C.GoBytes(unsafe.Pointer(C.duckdb_string_t_data(&cStr)), C.int(length)))
+	}
+	return string(C.GoBytes(unsafe.Pointer(C.duckdb_string_t_data(&cStr)), C.int(length)))
 }
 
 // ------------------------------------------------------------------ //
@@ -1273,14 +1275,20 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 	defer Free(typesSlice)
 	typesPtr := (*C.duckdb_logical_type)(typesSlice)
 
-	namesSlice := allocCharSlice(names)
-	defer Free(namesSlice)
-	namesPtr := (**C.char)(namesSlice)
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	defer Free(unsafe.Pointer(namesSlice))
+
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
 
 	// Create the STRUCT type.
 	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, C.idx_t(count))
 
-	freeCharSlice(namesSlice, count)
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
@@ -1289,14 +1297,20 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 func CreateEnumType(names []string) LogicalType {
 	count := len(names)
 
-	namesSlice := allocCharSlice(names)
-	defer Free(namesSlice)
-	namesPtr := (**C.char)(namesSlice)
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	defer Free(unsafe.Pointer(namesSlice))
+
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
 
 	// Create the ENUM type.
 	logicalType := C.duckdb_create_enum_type(namesPtr, C.idx_t(count))
 
-	freeCharSlice(namesSlice, count)
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
@@ -2135,7 +2149,7 @@ func ValidityMaskValueIsValid(maskPtr unsafe.Pointer, index uint64) bool {
 	idxInEntry := index % 64
 	slice := (*[1 << 31]C.uint64_t)(maskPtr)
 	isValid := slice[entryIdx] & (C.uint64_t(1) << idxInEntry)
-	return uint64(isValid) == 1
+	return uint64(isValid) != 0
 }
 
 const (
@@ -2154,22 +2168,4 @@ func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
 		(*typesSlice)[i] = t.data()
 	}
 	return unsafe.Pointer(typesSlice)
-}
-
-func allocCharSlice(names []string) unsafe.Pointer {
-	count := len(names)
-
-	// Initialize the memory of the names.
-	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
-	for i, name := range names {
-		(*namesSlice)[i] = C.CString(name)
-	}
-	return unsafe.Pointer(namesSlice)
-}
-
-func freeCharSlice(slice unsafe.Pointer, count int) {
-	sliceCast := (*[]*C.char)(slice)
-	for i := 0; i < count; i++ {
-		Free(unsafe.Pointer((*sliceCast)[i]))
-	}
 }
