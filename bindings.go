@@ -61,18 +61,18 @@ const (
 type State C.duckdb_state
 
 const (
-	Success State = C.DuckDBSuccess
-	Error   State = C.DuckDBError
+	StateSuccess State = C.DuckDBSuccess
+	StateError   State = C.DuckDBError
 )
 
 // PendingState wraps duckdb_pending_state.
 type PendingState C.duckdb_pending_state
 
 const (
-	PendingResultReady      PendingState = C.DUCKDB_PENDING_RESULT_READY
-	PendingResultNotReady   PendingState = C.DUCKDB_PENDING_RESULT_NOT_READY
-	PendingError            PendingState = C.DUCKDB_PENDING_ERROR
-	PendingNoTasksAvailable PendingState = C.DUCKDB_PENDING_NO_TASKS_AVAILABLE
+	PendingStateResultReady      PendingState = C.DUCKDB_PENDING_RESULT_READY
+	PendingStateResultNotReady   PendingState = C.DUCKDB_PENDING_RESULT_NOT_READY
+	PendingStateError            PendingState = C.DUCKDB_PENDING_ERROR
+	PendingStateNoTasksAvailable PendingState = C.DUCKDB_PENDING_NO_TASKS_AVAILABLE
 )
 
 // ResultType wraps duckdb_result_type.
@@ -123,57 +123,57 @@ const (
 type ErrorType C.duckdb_error_type
 
 const (
-	ErrorInvalid              ErrorType = C.DUCKDB_ERROR_INVALID
-	ErrorOutOfRange           ErrorType = C.DUCKDB_ERROR_OUT_OF_RANGE
-	ErrorConversion           ErrorType = C.DUCKDB_ERROR_CONVERSION
-	ErrorUnknownType          ErrorType = C.DUCKDB_ERROR_UNKNOWN_TYPE
-	ErrorDecimal              ErrorType = C.DUCKDB_ERROR_DECIMAL
-	ErrorMismatchType         ErrorType = C.DUCKDB_ERROR_MISMATCH_TYPE
-	ErrorDivideByZero         ErrorType = C.DUCKDB_ERROR_DIVIDE_BY_ZERO
-	ErrorObjectSize           ErrorType = C.DUCKDB_ERROR_OBJECT_SIZE
-	ErrorInvalidType          ErrorType = C.DUCKDB_ERROR_INVALID_TYPE
-	ErrorSerialization        ErrorType = C.DUCKDB_ERROR_SERIALIZATION
-	ErrorTransaction          ErrorType = C.DUCKDB_ERROR_TRANSACTION
-	ErrorNotImplemented       ErrorType = C.DUCKDB_ERROR_NOT_IMPLEMENTED
-	ErrorExpression           ErrorType = C.DUCKDB_ERROR_EXPRESSION
-	ErrorCatalog              ErrorType = C.DUCKDB_ERROR_CATALOG
-	ErrorParser               ErrorType = C.DUCKDB_ERROR_PARSER
-	ErrorPlanner              ErrorType = C.DUCKDB_ERROR_PLANNER
-	ErrorScheduler            ErrorType = C.DUCKDB_ERROR_SCHEDULER
-	ErrorExecutor             ErrorType = C.DUCKDB_ERROR_EXECUTOR
-	ErrorConstraint           ErrorType = C.DUCKDB_ERROR_CONSTRAINT
-	ErrorIndex                ErrorType = C.DUCKDB_ERROR_INDEX
-	ErrorStat                 ErrorType = C.DUCKDB_ERROR_STAT
-	ErrorConnection           ErrorType = C.DUCKDB_ERROR_CONNECTION
-	ErrorSyntax               ErrorType = C.DUCKDB_ERROR_SYNTAX
-	ErrorSettings             ErrorType = C.DUCKDB_ERROR_SETTINGS
-	ErrorBinder               ErrorType = C.DUCKDB_ERROR_BINDER
-	ErrorNetwork              ErrorType = C.DUCKDB_ERROR_NETWORK
-	ErrorOptimizer            ErrorType = C.DUCKDB_ERROR_OPTIMIZER
-	ErrorNullPointer          ErrorType = C.DUCKDB_ERROR_NULL_POINTER
-	ErrorErrorIO              ErrorType = C.DUCKDB_ERROR_IO
-	ErrorInterrupt            ErrorType = C.DUCKDB_ERROR_INTERRUPT
-	ErrorFatal                ErrorType = C.DUCKDB_ERROR_FATAL
-	ErrorInternal             ErrorType = C.DUCKDB_ERROR_INTERNAL
-	ErrorInvalidInput         ErrorType = C.DUCKDB_ERROR_INVALID_INPUT
-	ErrorOutOfMemory          ErrorType = C.DUCKDB_ERROR_OUT_OF_MEMORY
-	ErrorPermission           ErrorType = C.DUCKDB_ERROR_PERMISSION
-	ErrorParameterNotResolved ErrorType = C.DUCKDB_ERROR_PARAMETER_NOT_RESOLVED
-	ErrorParameterNotAllowed  ErrorType = C.DUCKDB_ERROR_PARAMETER_NOT_ALLOWED
-	ErrorDependency           ErrorType = C.DUCKDB_ERROR_DEPENDENCY
-	ErrorHTTP                 ErrorType = C.DUCKDB_ERROR_HTTP
-	ErrorMissingExtension     ErrorType = C.DUCKDB_ERROR_MISSING_EXTENSION
-	ErrorAutoload             ErrorType = C.DUCKDB_ERROR_AUTOLOAD
-	ErrorSequence             ErrorType = C.DUCKDB_ERROR_SEQUENCE
-	ErrorInvalidConfiguration ErrorType = C.DUCKDB_INVALID_CONFIGURATION
+	ErrorTypeInvalid              ErrorType = C.DUCKDB_ERROR_INVALID
+	ErrorTypeOutOfRange           ErrorType = C.DUCKDB_ERROR_OUT_OF_RANGE
+	ErrorTypeConversion           ErrorType = C.DUCKDB_ERROR_CONVERSION
+	ErrorTypeUnknownType          ErrorType = C.DUCKDB_ERROR_UNKNOWN_TYPE
+	ErrorTypeDecimal              ErrorType = C.DUCKDB_ERROR_DECIMAL
+	ErrorTypeMismatchType         ErrorType = C.DUCKDB_ERROR_MISMATCH_TYPE
+	ErrorTypeDivideByZero         ErrorType = C.DUCKDB_ERROR_DIVIDE_BY_ZERO
+	ErrorTypeObjectSize           ErrorType = C.DUCKDB_ERROR_OBJECT_SIZE
+	ErrorTypeInvalidType          ErrorType = C.DUCKDB_ERROR_INVALID_TYPE
+	ErrorTypeSerialization        ErrorType = C.DUCKDB_ERROR_SERIALIZATION
+	ErrorTypeTransaction          ErrorType = C.DUCKDB_ERROR_TRANSACTION
+	ErrorTypeNotImplemented       ErrorType = C.DUCKDB_ERROR_NOT_IMPLEMENTED
+	ErrorTypeExpression           ErrorType = C.DUCKDB_ERROR_EXPRESSION
+	ErrorTypeCatalog              ErrorType = C.DUCKDB_ERROR_CATALOG
+	ErrorTypeParser               ErrorType = C.DUCKDB_ERROR_PARSER
+	ErrorTypePlanner              ErrorType = C.DUCKDB_ERROR_PLANNER
+	ErrorTypeScheduler            ErrorType = C.DUCKDB_ERROR_SCHEDULER
+	ErrorTypeExecutor             ErrorType = C.DUCKDB_ERROR_EXECUTOR
+	ErrorTypeConstraint           ErrorType = C.DUCKDB_ERROR_CONSTRAINT
+	ErrorTypeIndex                ErrorType = C.DUCKDB_ERROR_INDEX
+	ErrorTypeStat                 ErrorType = C.DUCKDB_ERROR_STAT
+	ErrorTypeConnection           ErrorType = C.DUCKDB_ERROR_CONNECTION
+	ErrorTypeSyntax               ErrorType = C.DUCKDB_ERROR_SYNTAX
+	ErrorTypeSettings             ErrorType = C.DUCKDB_ERROR_SETTINGS
+	ErrorTypeBinder               ErrorType = C.DUCKDB_ERROR_BINDER
+	ErrorTypeNetwork              ErrorType = C.DUCKDB_ERROR_NETWORK
+	ErrorTypeOptimizer            ErrorType = C.DUCKDB_ERROR_OPTIMIZER
+	ErrorTypeNullPointer          ErrorType = C.DUCKDB_ERROR_NULL_POINTER
+	ErrorTypeErrorIO              ErrorType = C.DUCKDB_ERROR_IO
+	ErrorTypeInterrupt            ErrorType = C.DUCKDB_ERROR_INTERRUPT
+	ErrorTypeFatal                ErrorType = C.DUCKDB_ERROR_FATAL
+	ErrorTypeInternal             ErrorType = C.DUCKDB_ERROR_INTERNAL
+	ErrorTypeInvalidInput         ErrorType = C.DUCKDB_ERROR_INVALID_INPUT
+	ErrorTypeOutOfMemory          ErrorType = C.DUCKDB_ERROR_OUT_OF_MEMORY
+	ErrorTypePermission           ErrorType = C.DUCKDB_ERROR_PERMISSION
+	ErrorTypeParameterNotResolved ErrorType = C.DUCKDB_ERROR_PARAMETER_NOT_RESOLVED
+	ErrorTypeParameterNotAllowed  ErrorType = C.DUCKDB_ERROR_PARAMETER_NOT_ALLOWED
+	ErrorTypeDependency           ErrorType = C.DUCKDB_ERROR_DEPENDENCY
+	ErrorTypeHTTP                 ErrorType = C.DUCKDB_ERROR_HTTP
+	ErrorTypeMissingExtension     ErrorType = C.DUCKDB_ERROR_MISSING_EXTENSION
+	ErrorTypeAutoload             ErrorType = C.DUCKDB_ERROR_AUTOLOAD
+	ErrorTypeSequence             ErrorType = C.DUCKDB_ERROR_SEQUENCE
+	ErrorTypeInvalidConfiguration ErrorType = C.DUCKDB_INVALID_CONFIGURATION
 )
 
 // CastMode wraps duckdb_cast_mode.
 type CastMode C.duckdb_cast_mode
 
 const (
-	CastNormal CastMode = C.DUCKDB_CAST_NORMAL
-	CastTry    CastMode = C.DUCKDB_CAST_TRY
+	CastModeNormal CastMode = C.DUCKDB_CAST_NORMAL
+	CastModeTry    CastMode = C.DUCKDB_CAST_TRY
 )
 
 // ------------------------------------------------------------------ //
@@ -185,144 +185,63 @@ const (
 // *duckdb_delete_callback_t
 // *duckdb_task_state
 
-// Date wraps duckdb_date.
-type Date struct {
-	Days int32
+type (
+	Date              C.duckdb_date
+	DateStruct        C.duckdb_date_struct
+	Time              C.duckdb_time
+	TimeStruct        C.duckdb_time_struct
+	TimeTZ            C.duckdb_time_tz
+	TimeTZStruct      C.duckdb_time_tz_struct
+	Timestamp         C.duckdb_timestamp
+	TimestampStruct   C.duckdb_timestamp_struct
+	Interval          C.duckdb_interval
+	HugeInt           C.duckdb_hugeint
+	UHugeInt          C.duckdb_uhugeint
+	Decimal           C.duckdb_decimal
+	QueryProgressType C.duckdb_query_progress_type
+	// duckdb_string_t
+	ListEntry C.duckdb_list_entry
+	Column    C.duckdb_column
+)
+
+func DateSetDays(date *Date, days int32) {
+	date.days = C.int32_t(days)
 }
 
-func (date *Date) data() C.duckdb_date {
-	var result C.duckdb_date
-	result.days = C.int32_t(date.Days)
-	return result
+func TimeSetMicros(ti *Time, micros int64) {
+	ti.micros = C.int64_t(micros)
 }
 
-// DateStruct wraps duckdb_date_struct.
-type DateStruct struct {
-	Year  int32
-	Month int8
-	Day   int8
+func TimestampSetMicros(ts *Timestamp, micros int64) {
+	ts.micros = C.int64_t(micros)
 }
 
-// Time wraps duckdb_time.
-type Time struct {
-	Micros int64
+func IntervalSetMonths(interval *Interval, months int32) {
+	interval.months = C.int32_t(months)
 }
 
-func (t *Time) data() C.duckdb_time {
-	var result C.duckdb_time
-	result.micros = C.int64_t(t.Micros)
-	return result
+func IntervalSetDays(interval *Interval, days int32) {
+	interval.days = C.int32_t(days)
 }
 
-// TimeStruct wraps duckdb_time_struct.
-type TimeStruct struct {
-	Hour   int8
-	Min    int8
-	Sec    int8
-	Micros int32
+func IntervalSetMicros(interval *Interval, micros int64) {
+	interval.micros = C.int64_t(micros)
 }
 
-// TimeTZ wraps duckdb_time_tz.
-type TimeTZ struct {
-	Bits uint64
+func HugeIntGetLower(hugeInt *HugeInt) uint64 {
+	return uint64(hugeInt.lower)
 }
 
-func (t *TimeTZ) data() C.duckdb_time_tz {
-	var result C.duckdb_time_tz
-	result.bits = C.uint64_t(t.Bits)
-	return result
+func HugeIntSetLower(hugeInt *HugeInt, lower uint64) {
+	hugeInt.lower = C.uint64_t(lower)
 }
 
-// TimeTZStruct wraps duckdb_time_tz_struct.
-type TimeTZStruct struct {
-	Time   TimeStruct
-	Offset int32
+func HugeIntGetUpper(hugeInt *HugeInt) int64 {
+	return int64(hugeInt.upper)
 }
 
-// Timestamp wraps duckdb_timestamp.
-type Timestamp struct {
-	Micros int64
-}
-
-func (ts *Timestamp) data() C.duckdb_timestamp {
-	var result C.duckdb_timestamp
-	result.micros = C.int64_t(ts.Micros)
-	return result
-}
-
-// TimestampStruct wraps duckdb_timestamp_struct.
-type TimestampStruct struct {
-	Date DateStruct
-	Time TimeStruct
-}
-
-// Interval wraps duckdb_interval.
-type Interval struct {
-	Months int32
-	Days   int32
-	Micros int64
-}
-
-func (interval *Interval) data() C.duckdb_interval {
-	var result C.duckdb_interval
-	result.months = C.int32_t(interval.Months)
-	result.days = C.int32_t(interval.Days)
-	result.micros = C.int64_t(interval.Micros)
-	return result
-}
-
-// HugeInt wraps duckdb_hugeint.
-type HugeInt struct {
-	Lower uint64
-	Upper int64
-}
-
-func (hugeInt *HugeInt) data() C.duckdb_hugeint {
-	var result C.duckdb_hugeint
-	result.lower = C.uint64_t(hugeInt.Lower)
-	result.upper = C.int64_t(hugeInt.Upper)
-	return result
-}
-
-// UHugeInt wraps duckdb_uhugeint.
-type UHugeInt struct {
-	Lower uint64
-	Upper uint64
-}
-
-// Decimal wraps duckdb_decimal
-type Decimal struct {
-	Width uint8
-	Scale uint8
-	Value HugeInt
-}
-
-func (decimal *Decimal) data() C.duckdb_decimal {
-	var result C.duckdb_decimal
-	result.width = C.uint8_t(decimal.Width)
-	result.scale = C.uint8_t(decimal.Scale)
-	result.value = decimal.Value.data()
-	return result
-}
-
-// QueryProgressType wraps duckdb_query_progress_type.
-type QueryProgressType struct {
-	Percentage         float64
-	RowsProcessed      uint64
-	TotalRowsToProcess uint64
-}
-
-// duckdb_string_t
-
-// ListEntry wraps duckdb_list_entry.
-type ListEntry struct {
-	Offset uint64
-	Length uint64
-}
-
-// Column wraps duckdb_column.
-type Column struct {
-	data C.duckdb_column
+func HugeIntSetUpper(hugeInt *HugeInt, upper int64) {
+	hugeInt.upper = C.int64_t(upper)
 }
 
 // ------------------------------------------------------------------ //
@@ -334,8 +253,8 @@ type Vector struct {
 	Ptr unsafe.Pointer
 }
 
-func (vector *Vector) data() C.duckdb_vector {
-	return C.duckdb_vector(vector.Ptr)
+func (vec *Vector) data() C.duckdb_vector {
+	return C.duckdb_vector(vec.Ptr)
 }
 
 // duckdb_string
@@ -509,7 +428,14 @@ func (info *BindInfo) data() C.duckdb_bind_info {
 	return C.duckdb_bind_info(info.Ptr)
 }
 
-// *duckdb_init_info
+// InitInfo wraps *C.duckdb_init_info.
+type InitInfo struct {
+	Ptr unsafe.Pointer
+}
+
+func (info *InitInfo) data() C.duckdb_init_info {
+	return C.duckdb_init_info(info.Ptr)
+}
 
 // *duckdb_table_function_bind_t
 // *duckdb_table_function_init_t
@@ -598,7 +524,10 @@ func Connect(db Database, outConn *Connection) State {
 	return State(state)
 }
 
-// duckdb_interrupt
+func Interrupt(conn Connection) {
+	C.duckdb_interrupt(conn.data())
+}
+
 // duckdb_query_progress
 
 func Disconnect(conn *Connection) {
@@ -650,13 +579,37 @@ func DestroyResult(res *Result) {
 	C.duckdb_destroy_result(&res.data)
 }
 
-// duckdb_column_name
-// duckdb_column_type
+func ColumnName(res *Result, col uint64) string {
+	name := C.duckdb_column_name(&res.data, C.idx_t(col))
+	return C.GoString(name)
+}
+
+func ColumnType(res *Result, col uint64) Type {
+	t := C.duckdb_column_type(&res.data, C.idx_t(col))
+	return Type(t)
+}
+
 // duckdb_result_statement_type
-// duckdb_column_logical_type
-// duckdb_column_count
+
+func ColumnLogicalType(res *Result, col uint64) LogicalType {
+	logicalType := C.duckdb_column_logical_type(&res.data, C.idx_t(col))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func ColumnCount(res *Result) uint64 {
+	count := C.duckdb_column_count(&res.data)
+	return uint64(count)
+}
+
 // duckdb_rows_changed
-// duckdb_result_error
+
+func ResultError(res *Result) string {
+	err := C.duckdb_result_error(&res.data)
+	return C.GoString(err)
+}
+
 // duckdb_result_error_type
 
 // ------------------------------------------------------------------ //
@@ -679,7 +632,11 @@ func Free(ptr unsafe.Pointer) {
 	C.duckdb_free(ptr)
 }
 
-// duckdb_vector_size
+func VectorSize() uint64 {
+	size := C.duckdb_vector_size()
+	return uint64(size)
+}
+
 // duckdb_string_is_inlined
 // duckdb_string_t_length
 // duckdb_string_t_data
@@ -695,9 +652,7 @@ func Free(ptr unsafe.Pointer) {
 
 func CreateTimeTZ(micros int64, offset int32) TimeTZ {
 	timeTZ := C.duckdb_create_time_tz(C.int64_t(micros), C.int32_t(offset))
-	return TimeTZ{
-		Bits: uint64(timeTZ.bits),
-	}
+	return TimeTZ(timeTZ)
 }
 
 // duckdb_from_time_tz
@@ -808,14 +763,14 @@ func BindInt64(preparedStmt PreparedStatement, index uint64, v int64) State {
 }
 
 func BindHugeInt(preparedStmt PreparedStatement, index uint64, v HugeInt) State {
-	state := C.duckdb_bind_hugeint(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_hugeint(preparedStmt.data(), C.idx_t(index), C.duckdb_hugeint(v))
 	return State(state)
 }
 
 // duckdb_bind_uhugeint
 
 func BindDecimal(preparedStmt PreparedStatement, index uint64, v Decimal) State {
-	state := C.duckdb_bind_decimal(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_decimal(preparedStmt.data(), C.idx_t(index), C.duckdb_decimal(v))
 	return State(state)
 }
 
@@ -850,24 +805,24 @@ func BindDouble(preparedStmt PreparedStatement, index uint64, v float64) State {
 }
 
 func BindDate(preparedStmt PreparedStatement, index uint64, v Date) State {
-	state := C.duckdb_bind_date(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_date(preparedStmt.data(), C.idx_t(index), C.duckdb_date(v))
 	return State(state)
 }
 
 func BindTime(preparedStmt PreparedStatement, index uint64, v Time) State {
-	state := C.duckdb_bind_time(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_time(preparedStmt.data(), C.idx_t(index), C.duckdb_time(v))
 	return State(state)
 }
 
 func BindTimestamp(preparedStmt PreparedStatement, index uint64, v Timestamp) State {
-	state := C.duckdb_bind_timestamp(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_timestamp(preparedStmt.data(), C.idx_t(index), C.duckdb_timestamp(v))
 	return State(state)
 }
 
 // duckdb_bind_timestamp_tz
 
 func BindInterval(preparedStmt PreparedStatement, index uint64, v Interval) State {
-	state := C.duckdb_bind_interval(preparedStmt.data(), C.idx_t(index), v.data())
+	state := C.duckdb_bind_interval(preparedStmt.data(), C.idx_t(index), C.duckdb_interval(v))
 	return State(state)
 }
 
@@ -936,12 +891,32 @@ func DestroyExtracted(extractedStmts *ExtractedStatements) {
 // Pending Result Interface
 // ------------------------------------------------------------------ //
 
-// duckdb_pending_prepared
-// duckdb_destroy_pending
-// duckdb_pending_error
+func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResult) State {
+	var pendingRes C.duckdb_pending_result
+	state := C.duckdb_pending_prepared(preparedStmt.data(), &pendingRes)
+	outPendingRes.Ptr = unsafe.Pointer(pendingRes)
+	return State(state)
+}
+
+func DestroyPending(pendingRes *PendingResult) {
+	data := pendingRes.data()
+	C.duckdb_destroy_pending(&data)
+	pendingRes.Ptr = nil
+}
+
+func PendingError(pendingRes PendingResult) string {
+	err := C.duckdb_pending_error(pendingRes.data())
+	return C.GoString(err)
+}
+
 // duckdb_pending_execute_task
 // duckdb_pending_execute_check_state
-// duckdb_execute_pending
+
+func ExecutePending(res PendingResult, outRes *Result) State {
+	state := C.duckdb_execute_pending(res.data(), &outRes.data)
+	return State(state)
+}
+
 // duckdb_pending_execution_is_finished
 
 // ------------------------------------------------------------------ //
@@ -975,7 +950,7 @@ func DestroyValue(v *Value) {
 // duckdb_create_time
 
 func CreateTimeTZValue(timeTZ TimeTZ) Value {
-	v := C.duckdb_create_time_tz_value(timeTZ.data())
+	v := C.duckdb_create_time_tz_value(C.duckdb_time_tz(timeTZ))
 	return Value{
 		Ptr: unsafe.Pointer(v),
 	}
@@ -1067,7 +1042,12 @@ func CreateLogicalType(t Type) LogicalType {
 	}
 }
 
-// duckdb_logical_type_get_alias
+func LogicalTypeGetAlias(logicalType LogicalType) string {
+	alias := C.duckdb_logical_type_get_alias(logicalType.data())
+	defer Free(unsafe.Pointer(alias))
+	return C.GoString(alias)
+}
+
 // duckdb_logical_type_set_alias
 
 func CreateListType(child LogicalType) LogicalType {
@@ -1094,56 +1074,36 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 // duckdb_create_union_type
 
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	// FIXME: Unify code with other slice allocation functions.
-
 	count := len(types)
-	size := C.size_t(unsafe.Sizeof(C.duckdb_logical_type(nil)))
-	typesSlice := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * size))
 
-	size = C.size_t(unsafe.Sizeof((*C.char)(nil)))
-	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * size))
+	typesSlice := allocLogicalTypeSlice(types)
+	defer Free(typesSlice)
+	typesPtr := (*C.duckdb_logical_type)(typesSlice)
 
-	for i, t := range types {
-		(*typesSlice)[i] = t.data()
-	}
-	for i, name := range names {
-		(*namesSlice)[i] = C.CString(name)
-	}
+	namesSlice := allocCharSlice(names)
+	defer Free(namesSlice)
+	namesPtr := (**C.char)(namesSlice)
 
-	cTypes := (*C.duckdb_logical_type)(unsafe.Pointer(typesSlice))
-	cNames := (**C.char)(unsafe.Pointer(namesSlice))
-	logicalType := C.duckdb_create_struct_type(cTypes, cNames, C.idx_t(count))
+	// Create the STRUCT type.
+	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, C.idx_t(count))
 
-	for i := 0; i < count; i++ {
-		C.duckdb_destroy_logical_type(&typesSlice[i])
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
-	Free(unsafe.Pointer(typesSlice))
-	Free(unsafe.Pointer(namesSlice))
-
+	freeCharSlice(namesSlice, count)
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
 }
 
 func CreateEnumType(names []string) LogicalType {
-	// FIXME: Unify code with other slice allocation functions.
-
 	count := len(names)
-	size := C.size_t(unsafe.Sizeof((*C.char)(nil)))
-	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * size))
 
-	for i, name := range names {
-		(*namesSlice)[i] = C.CString(name)
-	}
-	cNames := (**C.char)(unsafe.Pointer(namesSlice))
-	logicalType := C.duckdb_create_enum_type(cNames, C.idx_t(count))
+	namesSlice := allocCharSlice(names)
+	defer Free(namesSlice)
+	namesPtr := (**C.char)(namesSlice)
 
-	for i := 0; i < count; i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
-	Free(unsafe.Pointer(namesSlice))
+	// Create the ENUM type.
+	logicalType := C.duckdb_create_enum_type(namesPtr, C.idx_t(count))
 
+	freeCharSlice(namesSlice, count)
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
@@ -1161,20 +1121,72 @@ func GetTypeId(logicalType LogicalType) Type {
 	return Type(t)
 }
 
-// duckdb_decimal_width
-// duckdb_decimal_scale
+func DecimalWidth(logicalType LogicalType) uint8 {
+	width := C.duckdb_decimal_width(logicalType.data())
+	return uint8(width)
+}
+
+func DecimalScale(logicalType LogicalType) uint8 {
+	scale := C.duckdb_decimal_scale(logicalType.data())
+	return uint8(scale)
+}
+
 // duckdb_decimal_internal_type
 // duckdb_enum_internal_type
 // duckdb_enum_dictionary_size
 // duckdb_enum_dictionary_value
-// duckdb_list_type_child_type
-// duckdb_array_type_child_type
-// duckdb_array_type_array_size
-// duckdb_map_type_key_type
-// duckdb_map_type_value_type
-// duckdb_struct_type_child_count
-// duckdb_struct_type_child_name
-// duckdb_struct_type_child_type
+
+func ListTypeChildType(logicalType LogicalType) LogicalType {
+	child := C.duckdb_list_type_child_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayTypeChildType(logicalType LogicalType) LogicalType {
+	child := C.duckdb_array_type_child_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayTypeArraySize(logicalType LogicalType) uint64 {
+	size := C.duckdb_array_type_array_size(logicalType.data())
+	return uint64(size)
+}
+
+func MapTypeKeyType(logicalType LogicalType) LogicalType {
+	key := C.duckdb_map_type_key_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(key),
+	}
+}
+
+func MapTypeValueType(logicalType LogicalType) LogicalType {
+	value := C.duckdb_map_type_value_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(value),
+	}
+}
+
+func StructTypeChildCount(logicalType LogicalType) uint64 {
+	count := C.duckdb_struct_type_child_count(logicalType.data())
+	return uint64(count)
+}
+
+func StructTypeChildName(logicalType LogicalType, index uint64) string {
+	cName := C.duckdb_struct_type_child_name(logicalType.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(cName))
+	return C.GoString(cName)
+}
+
+func StructTypeChildType(logicalType LogicalType, index uint64) LogicalType {
+	child := C.duckdb_struct_type_child_type(logicalType.data(), C.idx_t(index))
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
 // duckdb_union_type_member_count
 // duckdb_union_type_member_name
 // duckdb_union_type_member_type
@@ -1191,30 +1203,111 @@ func DestroyLogicalType(logicalType *LogicalType) {
 // Data Chunk Interface
 // ------------------------------------------------------------------ //
 
-// duckdb_create_data_chunk
-// duckdb_destroy_data_chunk
+func CreateDataChunk(types []LogicalType) DataChunk {
+	count := len(types)
+
+	typesSlice := allocLogicalTypeSlice(types)
+	typesPtr := (*C.duckdb_logical_type)(typesSlice)
+	defer Free(unsafe.Pointer(typesPtr))
+
+	chunk := C.duckdb_create_data_chunk(typesPtr, C.idx_t(count))
+	return DataChunk{
+		Ptr: unsafe.Pointer(chunk),
+	}
+}
+
+func DestroyDataChunk(chunk *DataChunk) {
+	data := chunk.data()
+	C.duckdb_destroy_data_chunk(&data)
+	chunk.Ptr = nil
+}
+
 // duckdb_data_chunk_reset
-// duckdb_data_chunk_get_column_count
-// duckdb_data_chunk_get_vector
-// duckdb_data_chunk_get_size
-// duckdb_data_chunk_set_size
+
+func DataChunkGetColumnCount(chunk DataChunk) uint64 {
+	count := C.duckdb_data_chunk_get_column_count(chunk.data())
+	return uint64(count)
+}
+
+func DataChunkGetVector(chunk DataChunk, index uint64) Vector {
+	vec := C.duckdb_data_chunk_get_vector(chunk.data(), C.idx_t(index))
+	return Vector{
+		Ptr: unsafe.Pointer(vec),
+	}
+}
+
+func DataChunkGetSize(chunk DataChunk) uint64 {
+	size := C.duckdb_data_chunk_get_size(chunk.data())
+	return uint64(size)
+}
+
+func DataChunkSetSize(chunk DataChunk, size uint64) {
+	C.duckdb_data_chunk_set_size(chunk.data(), C.idx_t(size))
+}
 
 // ------------------------------------------------------------------ //
 // Vector Interface
 // ------------------------------------------------------------------ //
 
-// duckdb_vector_get_column_type
-// duckdb_vector_get_data
-// duckdb_vector_get_validity
-// duckdb_vector_ensure_validity_writable
+func VectorGetColumnType(vec Vector) LogicalType {
+	logicalType := C.duckdb_vector_get_column_type(vec.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func VectorGetData(vec Vector) unsafe.Pointer {
+	ptr := C.duckdb_vector_get_data(vec.data())
+	return unsafe.Pointer(ptr)
+}
+
+func VectorGetValidity(vec Vector) unsafe.Pointer {
+	mask := C.duckdb_vector_get_validity(vec.data())
+	return unsafe.Pointer(mask)
+}
+
+func VectorEnsureValidityWritable(vec Vector) {
+	C.duckdb_vector_ensure_validity_writable(vec.data())
+}
+
 // duckdb_vector_assign_string_element
 // duckdb_vector_assign_string_element_len
-// duckdb_list_vector_get_child
-// duckdb_list_vector_get_size
-// duckdb_list_vector_set_size
-// duckdb_list_vector_reserve
-// duckdb_struct_vector_get_child
-// duckdb_array_vector_get_child
+
+func ListVectorGetChild(vec Vector) Vector {
+	child := C.duckdb_list_vector_get_child(vec.data())
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ListVectorGetSize(vec Vector) uint64 {
+	size := C.duckdb_list_vector_get_size(vec.data())
+	return uint64(size)
+}
+
+func ListVectorSetSize(vec Vector, size uint64) State {
+	state := C.duckdb_list_vector_set_size(vec.data(), C.idx_t(size))
+	return State(state)
+}
+
+func ListVectorReserve(vec Vector, capacity uint64) State {
+	state := C.duckdb_list_vector_reserve(vec.data(), C.idx_t(capacity))
+	return State(state)
+}
+
+func StructVectorGetChild(vec Vector, index uint64) Vector {
+	child := C.duckdb_struct_vector_get_child(vec.data(), C.idx_t(index))
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayVectorGetChild(vec Vector) Vector {
+	child := C.duckdb_array_vector_get_child(vec.data())
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
 
 // ------------------------------------------------------------------ //
 // Validity Mask Functions
@@ -1362,13 +1455,45 @@ func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 // Table Function Bind
 // ------------------------------------------------------------------ //
 
-// duckdb_bind_get_extra_info
-// duckdb_bind_add_result_column
+func BindGetExtraInfo(info BindInfo) unsafe.Pointer {
+	ptr := C.duckdb_bind_get_extra_info(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func BindAddResultColumn(info BindInfo, name string, logicalType LogicalType) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	C.duckdb_bind_add_result_column(info.data(), cName, logicalType.data())
+}
+
 // duckdb_bind_get_parameter_count
-// duckdb_bind_get_parameter
-// duckdb_bind_get_named_parameter
-// duckdb_bind_set_bind_data
-// duckdb_bind_set_cardinality
+
+func BindGetParameter(info BindInfo, index uint64) Value {
+	v := C.duckdb_bind_get_parameter(info.data(), C.idx_t(index))
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func BindGetNamedParameter(info BindInfo, name string) Value {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	v := C.duckdb_bind_get_named_parameter(info.data(), cName)
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func BindSetBindData(info BindInfo, bindDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_bind_set_bind_data(info.data(), bindDataPtr, callback)
+}
+
+func BindSetCardinality(info BindInfo, cardinality uint64, exact bool) {
+	C.duckdb_bind_set_cardinality(info.data(), C.idx_t(cardinality), C.bool(exact))
+}
 
 func BindSetError(info BindInfo, err string) {
 	cErr := C.CString(err)
@@ -1381,10 +1506,24 @@ func BindSetError(info BindInfo, err string) {
 // ------------------------------------------------------------------ //
 
 // duckdb_init_get_extra_info
-// duckdb_init_get_bind_data
+
+func InitGetBindData(info InitInfo) unsafe.Pointer {
+	ptr := C.duckdb_init_get_bind_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
 // duckdb_init_set_init_data
-// duckdb_init_get_column_count
-// duckdb_init_get_column_index
+
+func InitGetColumnCount(info InitInfo) uint64 {
+	count := C.duckdb_init_get_column_count(info.data())
+	return uint64(count)
+}
+
+func InitGetColumnIndex(info InitInfo, index uint64) uint64 {
+	colIndex := C.duckdb_init_get_column_index(info.data(), C.idx_t(index))
+	return uint64(colIndex)
+}
+
 // duckdb_init_set_max_threads
 // duckdb_init_set_error
 
@@ -1560,9 +1699,21 @@ func AppendDataChunk(appender Appender, chunk DataChunk) State {
 // duckdb_row_count
 // duckdb_column_data
 // duckdb_nullmask_data
-// duckdb_result_get_chunk
+
+func ResultGetChunk(res Result, index uint64) DataChunk {
+	chunk := C.duckdb_result_get_chunk(res.data, C.idx_t(index))
+	return DataChunk{
+		Ptr: unsafe.Pointer(chunk),
+	}
+}
+
 // duckdb_result_is_streaming
-// duckdb_result_chunk_count
+
+func ResultChunkCount(res Result) uint64 {
+	count := C.duckdb_result_chunk_count(res.data)
+	return uint64(count)
+}
+
 // duckdb_value_boolean
 // duckdb_value_int8
 // duckdb_value_int16
@@ -1669,18 +1820,38 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 // Go Bindings Helper
 // ------------------------------------------------------------------ //
 
-func MallocLogicalTypeSlice(count uint64) (unsafe.Pointer, []LogicalType) {
-	// FIXME: Unify code with other slice allocation functions.
+const (
+	logicalTypeSize = C.size_t(unsafe.Sizeof((C.duckdb_logical_type)(nil)))
+	charSize        = C.size_t(unsafe.Sizeof((*C.char)(nil)))
+)
 
-	var dummy C.duckdb_logical_type
-	size := C.size_t(unsafe.Sizeof(dummy))
+func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
+	count := len(types)
 
-	ptr := unsafe.Pointer(C.malloc(C.size_t(count) * size))
-	slice := (*[1 << 30]C.duckdb_logical_type)(ptr)[:count:count]
-
-	var outSlice []LogicalType
-	for i := 0; i < int(count); i++ {
-		outSlice = append(outSlice, LogicalType{Ptr: unsafe.Pointer(slice[i])})
+	// Initialize the memory of the logical types.
+	typesSlice := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
+	for i, t := range types {
+		// We only copy the pointers.
+		// The actual types live in types.
+		(*typesSlice)[i] = t.data()
 	}
-	return ptr, outSlice
+	return unsafe.Pointer(typesSlice)
+}
+
+func allocCharSlice(names []string) unsafe.Pointer {
+	count := len(names)
+
+	// Initialize the memory of the names.
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	return unsafe.Pointer(namesSlice)
+}
+
+func freeCharSlice(slice unsafe.Pointer, count int) {
+	sliceCast := (*[]*C.char)(slice)
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*sliceCast)[i]))
+	}
 }
