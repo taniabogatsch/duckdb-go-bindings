@@ -10,6 +10,7 @@ import "unsafe"
 // Enums
 // ------------------------------------------------------------------ //
 
+// Type wraps duckdb_type.
 type Type C.duckdb_type
 
 func (t *Type) data() C.duckdb_type {
@@ -56,6 +57,7 @@ const (
 	TypeSQLNull     Type = C.DUCKDB_TYPE_SQLNULL
 )
 
+// State wraps duckdb_state.
 type State C.duckdb_state
 
 const (
@@ -63,6 +65,7 @@ const (
 	Error   State = C.DuckDBError
 )
 
+// PendingState wraps duckdb_pending_state.
 type PendingState C.duckdb_pending_state
 
 const (
@@ -72,6 +75,7 @@ const (
 	PendingNoTasksAvailable PendingState = C.DUCKDB_PENDING_NO_TASKS_AVAILABLE
 )
 
+// ResultType wraps duckdb_result_type.
 type ResultType C.duckdb_result_type
 
 const (
@@ -81,6 +85,7 @@ const (
 	ResultTypeQueryResult ResultType = C.DUCKDB_RESULT_TYPE_QUERY_RESULT
 )
 
+// StatementType wraps duckdb_statement_type.
 type StatementType C.duckdb_statement_type
 
 const (
@@ -114,6 +119,7 @@ const (
 	StatementTypeMulti       StatementType = C.DUCKDB_STATEMENT_TYPE_MULTI
 )
 
+// ErrorType wraps duckdb_error_type.
 type ErrorType C.duckdb_error_type
 
 const (
@@ -162,6 +168,7 @@ const (
 	ErrorInvalidConfiguration ErrorType = C.DUCKDB_INVALID_CONFIGURATION
 )
 
+// CastMode wraps duckdb_cast_mode.
 type CastMode C.duckdb_cast_mode
 
 const (
@@ -173,13 +180,12 @@ const (
 // Types
 // ------------------------------------------------------------------ //
 
-// IdxT wraps C.idx_t.
-type IdxT uint64
+// NOTE: No wrapping for C.idx_t.
 
-func (index *IdxT) data() C.idx_t {
-	return C.idx_t(*index)
-}
+// *duckdb_delete_callback_t
+// *duckdb_task_state
 
+// Date wraps duckdb_date.
 type Date struct {
 	Days int32
 }
@@ -190,12 +196,14 @@ func (date *Date) data() C.duckdb_date {
 	return result
 }
 
+// DateStruct wraps duckdb_date_struct.
 type DateStruct struct {
 	Year  int32
 	Month int8
 	Day   int8
 }
 
+// Time wraps duckdb_time.
 type Time struct {
 	Micros int64
 }
@@ -206,6 +214,7 @@ func (t *Time) data() C.duckdb_time {
 	return result
 }
 
+// TimeStruct wraps duckdb_time_struct.
 type TimeStruct struct {
 	Hour   int8
 	Min    int8
@@ -213,15 +222,24 @@ type TimeStruct struct {
 	Micros int32
 }
 
+// TimeTZ wraps duckdb_time_tz.
 type TimeTZ struct {
 	Bits uint64
 }
 
+func (t *TimeTZ) data() C.duckdb_time_tz {
+	var result C.duckdb_time_tz
+	result.bits = C.uint64_t(t.Bits)
+	return result
+}
+
+// TimeTZStruct wraps duckdb_time_tz_struct.
 type TimeTZStruct struct {
 	Time   TimeStruct
 	Offset int32
 }
 
+// Timestamp wraps duckdb_timestamp.
 type Timestamp struct {
 	Micros int64
 }
@@ -232,11 +250,13 @@ func (ts *Timestamp) data() C.duckdb_timestamp {
 	return result
 }
 
+// TimestampStruct wraps duckdb_timestamp_struct.
 type TimestampStruct struct {
 	Date DateStruct
 	Time TimeStruct
 }
 
+// Interval wraps duckdb_interval.
 type Interval struct {
 	Months int32
 	Days   int32
@@ -251,6 +271,7 @@ func (interval *Interval) data() C.duckdb_interval {
 	return result
 }
 
+// HugeInt wraps duckdb_hugeint.
 type HugeInt struct {
 	Lower uint64
 	Upper int64
@@ -259,15 +280,17 @@ type HugeInt struct {
 func (hugeInt *HugeInt) data() C.duckdb_hugeint {
 	var result C.duckdb_hugeint
 	result.lower = C.uint64_t(hugeInt.Lower)
-	result.upper = C.uint64_t(hugeInt.Upper)
+	result.upper = C.int64_t(hugeInt.Upper)
 	return result
 }
 
+// UHugeInt wraps duckdb_uhugeint.
 type UHugeInt struct {
 	Lower uint64
 	Upper uint64
 }
 
+// Decimal wraps duckdb_decimal
 type Decimal struct {
 	Width uint8
 	Scale uint8
@@ -282,34 +305,32 @@ func (decimal *Decimal) data() C.duckdb_decimal {
 	return result
 }
 
+// QueryProgressType wraps duckdb_query_progress_type.
 type QueryProgressType struct {
 	Percentage         float64
 	RowsProcessed      uint64
 	TotalRowsToProcess uint64
 }
 
-// TODO:
 // duckdb_string_t
-// duckdb_string
-// duckdb_blob
 
+// ListEntry wraps duckdb_list_entry.
 type ListEntry struct {
 	Offset uint64
 	Length uint64
 }
 
-// TODO (maybe)
-// extension_access
+// Column wraps duckdb_column.
+type Column struct {
+	data C.duckdb_column
+}
 
 // ------------------------------------------------------------------ //
 // Pointers
 // ------------------------------------------------------------------ //
 
-// type Column C.duckdb_column
-
-// Vector wraps C.duckdb_vector.
+// Vector wraps *duckdb_vector.
 type Vector struct {
-	// Ptr to C.duckdb_vector.
 	Ptr unsafe.Pointer
 }
 
@@ -317,11 +338,16 @@ func (vector *Vector) data() C.duckdb_vector {
 	return C.duckdb_vector(vector.Ptr)
 }
 
-// type Result C.duckdb_result
+// duckdb_string
+// duckdb_blob
 
-// Database wraps C.duckdb_database.
+// Result wraps duckdb_result.
+type Result struct {
+	data C.duckdb_result
+}
+
+// Database wraps *duckdb_database.
 type Database struct {
-	// Ptr to C.duckdb_database.
 	Ptr unsafe.Pointer
 }
 
@@ -329,9 +355,8 @@ func (db *Database) data() C.duckdb_database {
 	return C.duckdb_database(db.Ptr)
 }
 
-// Connection wraps C.duckdb_connection.
+// Connection wraps *duckdb_connection.
 type Connection struct {
-	// Ptr to C.duckdb_connection.
 	Ptr unsafe.Pointer
 }
 
@@ -339,9 +364,8 @@ func (conn *Connection) data() C.duckdb_connection {
 	return C.duckdb_connection(conn.Ptr)
 }
 
-// PreparedStatement wraps C.duckdb_prepared_statement.
+// PreparedStatement wraps *duckdb_prepared_statement.
 type PreparedStatement struct {
-	// Ptr to C.duckdb_prepared_statement.
 	Ptr unsafe.Pointer
 }
 
@@ -349,9 +373,8 @@ func (preparedStmt *PreparedStatement) data() C.duckdb_prepared_statement {
 	return C.duckdb_prepared_statement(preparedStmt.Ptr)
 }
 
-// ExtractedStatements wraps C.duckdb_extracted_statements.
+// ExtractedStatements wraps *duckdb_extracted_statements.
 type ExtractedStatements struct {
-	// Ptr to C.duckdb_extracted_statements.
 	Ptr unsafe.Pointer
 }
 
@@ -359,11 +382,17 @@ func (extractedStmts *ExtractedStatements) data() C.duckdb_extracted_statements 
 	return C.duckdb_extracted_statements(extractedStmts.Ptr)
 }
 
-//type PendingResult *C.duckdb_pending_result
+// PendingResult wraps *duckdb_pending_result.
+type PendingResult struct {
+	Ptr unsafe.Pointer
+}
 
-// Appender wraps C.duckdb_appender.
+func (pendingRes *PendingResult) data() C.duckdb_pending_result {
+	return C.duckdb_pending_result(pendingRes.Ptr)
+}
+
+// Appender wraps *duckdb_appender.
 type Appender struct {
-	// Ptr to C.duckdb_appender.
 	Ptr unsafe.Pointer
 }
 
@@ -371,8 +400,16 @@ func (appender *Appender) data() C.duckdb_appender {
 	return C.duckdb_appender(appender.Ptr)
 }
 
-//type TableDescription *C.duckdb_table_description
+// TableDescription wraps *duckdb_table_description.
+type TableDescription struct {
+	Ptr unsafe.Pointer
+}
 
+func (description *TableDescription) data() C.duckdb_table_description {
+	return C.duckdb_table_description(description.Ptr)
+}
+
+// Config wraps *duckdb_config.
 type Config struct {
 	Ptr unsafe.Pointer
 }
@@ -381,9 +418,8 @@ func (config *Config) data() C.duckdb_config {
 	return C.duckdb_config(config.Ptr)
 }
 
-// LogicalType wraps C.duckdb_logical_type.
+// LogicalType wraps *duckdb_logical_type.
 type LogicalType struct {
-	// Ptr to C.duckdb_logical_type.
 	Ptr unsafe.Pointer
 }
 
@@ -391,11 +427,10 @@ func (logicalType *LogicalType) data() C.duckdb_logical_type {
 	return C.duckdb_logical_type(logicalType.Ptr)
 }
 
-//create_type_info
+// *duckdb_create_type_info
 
-// DataChunk wraps C.duckdb_data_chunk.
+// DataChunk wraps *duckdb_data_chunk.
 type DataChunk struct {
-	// Ptr to C.duckdb_data_chunk.
 	Ptr unsafe.Pointer
 }
 
@@ -403,9 +438,8 @@ func (chunk *DataChunk) data() C.duckdb_data_chunk {
 	return C.duckdb_data_chunk(chunk.Ptr)
 }
 
-// Value wraps C.duckdb_value.
+// Value wraps *duckdb_value.
 type Value struct {
-	// Ptr to C.duckdb_value.
 	Ptr unsafe.Pointer
 }
 
@@ -413,9 +447,8 @@ func (v *Value) data() C.duckdb_value {
 	return C.duckdb_value(v.Ptr)
 }
 
-// ProfilingInfo wraps C.duckdb_profiling_info.
+// ProfilingInfo wraps *duckdb_profiling_info.
 type ProfilingInfo struct {
-	// Ptr to C.duckdb_profiling_info.
 	Ptr unsafe.Pointer
 }
 
@@ -423,11 +456,10 @@ func (info *ProfilingInfo) data() C.duckdb_profiling_info {
 	return C.duckdb_profiling_info(info.Ptr)
 }
 
-// ?extension_info??
+// TODO: Do we need *duckdb_extension_info?
 
-// FunctionInfo wraps C.duckdb_function_info.
+// FunctionInfo wraps *duckdb_function_info.
 type FunctionInfo struct {
-	// Ptr to C.duckdb_function_info.
 	Ptr unsafe.Pointer
 }
 
@@ -435,9 +467,8 @@ func (info *FunctionInfo) data() C.duckdb_function_info {
 	return C.duckdb_function_info(info.Ptr)
 }
 
-// ScalarFunction wraps C.duckdb_scalar_function.
+// ScalarFunction wraps *duckdb_scalar_function.
 type ScalarFunction struct {
-	// Ptr to C.duckdb_scalar_function.
 	Ptr unsafe.Pointer
 }
 
@@ -445,9 +476,8 @@ func (f *ScalarFunction) data() C.duckdb_scalar_function {
 	return C.duckdb_scalar_function(f.Ptr)
 }
 
-// ScalarFunctionSet wraps C.duckdb_scalar_function_set.
+// ScalarFunctionSet wraps *duckdb_scalar_function_set.
 type ScalarFunctionSet struct {
-	// Ptr to C.duckdb_scalar_function_set.
 	Ptr unsafe.Pointer
 }
 
@@ -455,14 +485,23 @@ func (set *ScalarFunctionSet) data() C.duckdb_scalar_function_set {
 	return C.duckdb_scalar_function_set(set.Ptr)
 }
 
-//aggregate_function
-//aggregate_function_set
-//aggregate_state
-//table_function
+// *duckdb_scalar_function_t
 
-// BindInfo wraps C.duckdb_bind_info.
+// *duckdb_aggregate_function
+// *duckdb_aggregate_function_set
+// *duckdb_aggregate_state
+
+// *duckdb_aggregate_state_size
+// *duckdb_aggregate_init_t
+// *duckdb_aggregate_destroy_t
+// *duckdb_aggregate_update_t
+// *duckdb_aggregate_combine_t
+// *duckdb_aggregate_finalize_t
+
+// *duckdb_table_function
+
+// BindInfo wraps *duckdb_bind_info.
 type BindInfo struct {
-	// Ptr to C.duckdb_bind_info.
 	Ptr unsafe.Pointer
 }
 
@@ -470,13 +509,22 @@ func (info *BindInfo) data() C.duckdb_bind_info {
 	return C.duckdb_bind_info(info.Ptr)
 }
 
-//init_info
-//cast_function
-//replacement_scan_info
+// *duckdb_init_info
 
-// Arrow wraps C.duckdb_arrow.
+// *duckdb_table_function_bind_t
+// *duckdb_table_function_init_t
+// *duckdb_table_function_t
+
+// *duckdb_cast_function
+
+// *duckdb_cast_function_t
+
+// *duckdb_replacement_scan_info
+
+// *duckdb_replacement_callback_t
+
+// Arrow wraps *duckdb_arrow.
 type Arrow struct {
-	// Ptr to C.duckdb_arrow.
 	Ptr unsafe.Pointer
 }
 
@@ -484,9 +532,8 @@ func (arrow *Arrow) data() C.duckdb_arrow {
 	return C.duckdb_arrow(arrow.Ptr)
 }
 
-// ArrowStream wraps C.duckdb_arrow_stream.
+// ArrowStream wraps *duckdb_arrow_stream.
 type ArrowStream struct {
-	// Ptr to C.duckdb_arrow_stream.
 	Ptr unsafe.Pointer
 }
 
@@ -494,9 +541,8 @@ func (stream *ArrowStream) data() C.duckdb_arrow_stream {
 	return C.duckdb_arrow_stream(stream.Ptr)
 }
 
-// ArrowSchema wraps C.duckdb_arrow_schema.
+// ArrowSchema wraps *duckdb_arrow_schema.
 type ArrowSchema struct {
-	// Ptr to C.duckdb_arrow_schema.
 	Ptr unsafe.Pointer
 }
 
@@ -504,9 +550,8 @@ func (schema *ArrowSchema) data() C.duckdb_arrow_schema {
 	return C.duckdb_arrow_schema(schema.Ptr)
 }
 
-// ArrowArray wraps C.duckdb_arrow_array.
+// ArrowArray wraps *duckdb_arrow_array.
 type ArrowArray struct {
-	// Ptr to C.duckdb_arrow_array.
 	Ptr unsafe.Pointer
 }
 
@@ -514,34 +559,19 @@ func (array *ArrowArray) data() C.duckdb_arrow_array {
 	return C.duckdb_arrow_array(array.Ptr)
 }
 
-// ------------------------------------------------------------------ //
-// Function Pointers
-// ------------------------------------------------------------------ //
-
-// TODO:
-// duckdb_delete_callback_t
-// duckdb_task_state
-//duckdb_scalar_function_t
-//duckdb_aggregate_state_size
-//duckdb_aggregate_init_t
-//duckdb_aggregate_destroy_t
-//duckdb_aggregate_update_t
-//duckdb_aggregate_combine_t
-//duckdb_aggregate_finalize_t
-//duckdb_table_function_bind_t
-//duckdb_table_function_init_t
-//duckdb_table_function_t
-//duckdb_cast_function_t
-//duckdb_replacement_callback_t
+// TODO: What about duckdb_extension_access?
 
 // ------------------------------------------------------------------ //
 // Functions
 // ------------------------------------------------------------------ //
 
-//// Version v1.2.0
-//#define duckdb_open                                    duckdb_ext_api.duckdb_open
+// ------------------------------------------------------------------ //
+// Open Connect
+// ------------------------------------------------------------------ //
 
-func OpenExt(path string, outDB *Database, config Config, errMsg *string) State {
+// duckdb_open
+
+func OpenExt(path string, outDb *Database, config Config, errMsg *string) State {
 	cPath := C.CString(path)
 	defer Free(unsafe.Pointer(cPath))
 
@@ -550,7 +580,7 @@ func OpenExt(path string, outDB *Database, config Config, errMsg *string) State 
 
 	var db C.duckdb_database
 	state := C.duckdb_open_ext(cPath, &db, config.data(), &err)
-	outDB.Ptr = unsafe.Pointer(db)
+	outDb.Ptr = unsafe.Pointer(db)
 	*errMsg = C.GoString(err)
 	return State(state)
 }
@@ -568,8 +598,8 @@ func Connect(db Database, outConn *Connection) State {
 	return State(state)
 }
 
-//#define duckdb_interrupt                               duckdb_ext_api.duckdb_interrupt
-//#define duckdb_query_progress                          duckdb_ext_api.duckdb_query_progress
+// duckdb_interrupt
+// duckdb_query_progress
 
 func Disconnect(conn *Connection) {
 	data := conn.data()
@@ -577,7 +607,11 @@ func Disconnect(conn *Connection) {
 	conn.Ptr = nil
 }
 
-//#define duckdb_library_version                         duckdb_ext_api.duckdb_library_version
+// duckdb_library_version
+
+// ------------------------------------------------------------------ //
+// Configuration
+// ------------------------------------------------------------------ //
 
 func CreateConfig(outConfig *Config) State {
 	var config C.duckdb_config
@@ -586,8 +620,8 @@ func CreateConfig(outConfig *Config) State {
 	return State(state)
 }
 
-//#define duckdb_config_count                            duckdb_ext_api.duckdb_config_count
-//#define duckdb_get_config_flag                         duckdb_ext_api.duckdb_get_config_flag
+// duckdb_config_count
+// duckdb_get_config_flag
 
 func SetConfig(config Config, name string, option string) State {
 	cName := C.CString(name)
@@ -606,47 +640,101 @@ func DestroyConfig(config *Config) {
 	config.Ptr = nil
 }
 
-//#define duckdb_query                                   duckdb_ext_api.duckdb_query
-//#define duckdb_destroy_result                          duckdb_ext_api.duckdb_destroy_result
-//#define duckdb_column_name                             duckdb_ext_api.duckdb_column_name
-//#define duckdb_column_type                             duckdb_ext_api.duckdb_column_type
-//#define duckdb_result_statement_type                   duckdb_ext_api.duckdb_result_statement_type
-//#define duckdb_column_logical_type                     duckdb_ext_api.duckdb_column_logical_type
-//#define duckdb_column_count                            duckdb_ext_api.duckdb_column_count
-//#define duckdb_rows_changed                            duckdb_ext_api.duckdb_rows_changed
-//#define duckdb_result_error                            duckdb_ext_api.duckdb_result_error
-//#define duckdb_result_error_type                       duckdb_ext_api.duckdb_result_error_type
-//#define duckdb_result_return_type                      duckdb_ext_api.duckdb_result_return_type
-//#define duckdb_malloc                                  duckdb_ext_api.duckdb_malloc
+// ------------------------------------------------------------------ //
+// Query Execution
+// ------------------------------------------------------------------ //
+
+// duckdb_query
+
+func DestroyResult(res *Result) {
+	C.duckdb_destroy_result(&res.data)
+}
+
+// duckdb_column_name
+// duckdb_column_type
+// duckdb_result_statement_type
+// duckdb_column_logical_type
+// duckdb_column_count
+// duckdb_rows_changed
+// duckdb_result_error
+// duckdb_result_error_type
+
+// ------------------------------------------------------------------ //
+// Result Functions (many are deprecated)
+// ------------------------------------------------------------------ //
+
+// duckdb_result_return_type
+
+// ------------------------------------------------------------------ //
+// Safe Fetch Functions (all deprecated)
+// ------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------ //
+// Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_malloc
 
 func Free(ptr unsafe.Pointer) {
 	C.duckdb_free(ptr)
 }
 
-//#define duckdb_vector_size                             duckdb_ext_api.duckdb_vector_size
-//#define duckdb_string_is_inlined                       duckdb_ext_api.duckdb_string_is_inlined
-//#define duckdb_string_t_length                         duckdb_ext_api.duckdb_string_t_length
-//#define duckdb_string_t_data                           duckdb_ext_api.duckdb_string_t_data
-//#define duckdb_from_date                               duckdb_ext_api.duckdb_from_date
-//#define duckdb_to_date                                 duckdb_ext_api.duckdb_to_date
-//#define duckdb_is_finite_date                          duckdb_ext_api.duckdb_is_finite_date
-//#define duckdb_from_time                               duckdb_ext_api.duckdb_from_time
-//#define duckdb_create_time_tz                          duckdb_ext_api.duckdb_create_time_tz
-//#define duckdb_from_time_tz                            duckdb_ext_api.duckdb_from_time_tz
-//#define duckdb_to_time                                 duckdb_ext_api.duckdb_to_time
-//#define duckdb_from_timestamp                          duckdb_ext_api.duckdb_from_timestamp
-//#define duckdb_to_timestamp                            duckdb_ext_api.duckdb_to_timestamp
-//#define duckdb_is_finite_timestamp                     duckdb_ext_api.duckdb_is_finite_timestamp
-//#define duckdb_is_finite_timestamp_s                   duckdb_ext_api.duckdb_is_finite_timestamp_s
-//#define duckdb_is_finite_timestamp_ms                  duckdb_ext_api.duckdb_is_finite_timestamp_ms
-//#define duckdb_is_finite_timestamp_ns                  duckdb_ext_api.duckdb_is_finite_timestamp_ns
-//#define duckdb_hugeint_to_double                       duckdb_ext_api.duckdb_hugeint_to_double
-//#define duckdb_double_to_hugeint                       duckdb_ext_api.duckdb_double_to_hugeint
-//#define duckdb_uhugeint_to_double                      duckdb_ext_api.duckdb_uhugeint_to_double
-//#define duckdb_double_to_uhugeint                      duckdb_ext_api.duckdb_double_to_uhugeint
-//#define duckdb_double_to_decimal                       duckdb_ext_api.duckdb_double_to_decimal
-//#define duckdb_decimal_to_double                       duckdb_ext_api.duckdb_decimal_to_double
-//#define duckdb_prepare                                 duckdb_ext_api.duckdb_prepare
+// duckdb_vector_size
+// duckdb_string_is_inlined
+// duckdb_string_t_length
+// duckdb_string_t_data
+
+// ------------------------------------------------------------------ //
+// Date Time Timestamp Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_from_date
+// duckdb_to_date
+// duckdb_is_finite_date
+// duckdb_from_time
+
+func CreateTimeTZ(micros int64, offset int32) TimeTZ {
+	timeTZ := C.duckdb_create_time_tz(C.int64_t(micros), C.int32_t(offset))
+	return TimeTZ{
+		Bits: uint64(timeTZ.bits),
+	}
+}
+
+// duckdb_from_time_tz
+// duckdb_to_time
+// duckdb_from_timestamp
+// duckdb_to_timestamp
+// duckdb_is_finite_timestamp
+// duckdb_is_finite_timestamp_s
+// duckdb_is_finite_timestamp_ms
+// duckdb_is_finite_timestamp_ns
+
+// ------------------------------------------------------------------ //
+// Hugeint Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_hugeint_to_double
+// duckdb_double_to_hugeint
+
+// ------------------------------------------------------------------ //
+// Unsigned Hugeint Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_uhugeint_to_double
+// duckdb_double_to_uhugeint
+
+// ------------------------------------------------------------------ //
+// Decimal Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_double_to_decimal
+// duckdb_decimal_to_double
+
+// ------------------------------------------------------------------ //
+// Prepared Statements
+// ------------------------------------------------------------------ //
+
+// duckdb_prepare
 
 func DestroyPrepare(preparedStmt *PreparedStatement) {
 	data := preparedStmt.data()
@@ -659,162 +747,176 @@ func PrepareError(preparedStmt PreparedStatement) string {
 	return C.GoString(err)
 }
 
-//#define duckdb_prepare_error                           duckdb_ext_api.duckdb_prepare_error
-
-func NParams(preparedStmt PreparedStatement) IdxT {
+func NParams(preparedStmt PreparedStatement) uint64 {
 	count := C.duckdb_nparams(preparedStmt.data())
-	return IdxT(count)
+	return uint64(count)
 }
 
-func ParameterName(preparedStmt PreparedStatement, index IdxT) string {
-	cName := C.duckdb_parameter_name(preparedStmt.data(), index.data())
+func ParameterName(preparedStmt PreparedStatement, index uint64) string {
+	cName := C.duckdb_parameter_name(preparedStmt.data(), C.idx_t(index))
 	defer Free(unsafe.Pointer(cName))
 	return C.GoString(cName)
 }
 
-func ParamType(preparedStmt PreparedStatement, index IdxT) Type {
-	t := C.duckdb_param_type(preparedStmt.data(), index.data())
+func ParamType(preparedStmt PreparedStatement, index uint64) Type {
+	t := C.duckdb_param_type(preparedStmt.data(), C.idx_t(index))
 	return Type(t)
 }
 
-//#define duckdb_param_logical_type                      duckdb_ext_api.duckdb_param_logical_type
-//#define duckdb_clear_bindings                          duckdb_ext_api.duckdb_clear_bindings
+// duckdb_param_logical_type
+// duckdb_clear_bindings
 
 func PreparedStatementType(preparedStmt PreparedStatement) StatementType {
 	t := C.duckdb_prepared_statement_type(preparedStmt.data())
 	return StatementType(t)
 }
 
-//#define duckdb_bind_value                              duckdb_ext_api.duckdb_bind_value
-//#define duckdb_bind_parameter_index                    duckdb_ext_api.duckdb_bind_parameter_index
+// ------------------------------------------------------------------ //
+// Bind Values To Prepared Statements
+// ------------------------------------------------------------------ //
 
-func BindBoolean(preparedStmt PreparedStatement, index IdxT, v bool) State {
-	state := C.duckdb_bind_boolean(preparedStmt.data(), index.data(), C.bool(v))
+func BindValue(preparedStmt PreparedStatement, index uint64, v Value) State {
+	state := C.duckdb_bind_value(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-func BindInt8(preparedStmt PreparedStatement, index IdxT, v int8) State {
-	state := C.duckdb_bind_int8(preparedStmt.data(), index.data(), C.int8(v))
+// duckdb_bind_parameter_index
+
+func BindBoolean(preparedStmt PreparedStatement, index uint64, v bool) State {
+	state := C.duckdb_bind_boolean(preparedStmt.data(), C.idx_t(index), C.bool(v))
 	return State(state)
 }
 
-func BindInt16(preparedStmt PreparedStatement, index IdxT, v int16) State {
-	state := C.duckdb_bind_int16(preparedStmt.data(), index.data(), C.int16(v))
+func BindInt8(preparedStmt PreparedStatement, index uint64, v int8) State {
+	state := C.duckdb_bind_int8(preparedStmt.data(), C.idx_t(index), C.int8_t(v))
 	return State(state)
 }
 
-func BindInt32(preparedStmt PreparedStatement, index IdxT, v int32) State {
-	state := C.duckdb_bind_int32(preparedStmt.data(), index.data(), C.int32(v))
+func BindInt16(preparedStmt PreparedStatement, index uint64, v int16) State {
+	state := C.duckdb_bind_int16(preparedStmt.data(), C.idx_t(index), C.int16_t(v))
 	return State(state)
 }
 
-func BindInt64(preparedStmt PreparedStatement, index IdxT, v int64) State {
-	state := C.duckdb_bind_int64(preparedStmt.data(), index.data(), C.int64(v))
+func BindInt32(preparedStmt PreparedStatement, index uint64, v int32) State {
+	state := C.duckdb_bind_int32(preparedStmt.data(), C.idx_t(index), C.int32_t(v))
 	return State(state)
 }
 
-func BindHugeInt(preparedStmt PreparedStatement, index IdxT, v HugeInt) State {
-	state := C.duckdb_bind_hugeint(preparedStmt.data(), index.data(), v.data())
+func BindInt64(preparedStmt PreparedStatement, index uint64, v int64) State {
+	state := C.duckdb_bind_int64(preparedStmt.data(), C.idx_t(index), C.int64_t(v))
 	return State(state)
 }
 
-//#define duckdb_bind_uhugeint                           duckdb_ext_api.duckdb_bind_uhugeint
-
-func BindDecimal(preparedStmt PreparedStatement, index IdxT, v Decimal) State {
-	state := C.duckdb_bind_decimal(preparedStmt.data(), index.data(), v.data())
+func BindHugeInt(preparedStmt PreparedStatement, index uint64, v HugeInt) State {
+	state := C.duckdb_bind_hugeint(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-func BindUInt8(preparedStmt PreparedStatement, index IdxT, v uint8) State {
-	state := C.duckdb_bind_uint8(preparedStmt.data(), index.data(), C.uint8(v))
+// duckdb_bind_uhugeint
+
+func BindDecimal(preparedStmt PreparedStatement, index uint64, v Decimal) State {
+	state := C.duckdb_bind_decimal(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-func BindUInt16(preparedStmt PreparedStatement, index IdxT, v uint16) State {
-	state := C.duckdb_bind_uint16(preparedStmt.data(), index.data(), C.uint16(v))
+func BindUInt8(preparedStmt PreparedStatement, index uint64, v uint8) State {
+	state := C.duckdb_bind_uint8(preparedStmt.data(), C.idx_t(index), C.uint8_t(v))
 	return State(state)
 }
 
-func BindUInt32(preparedStmt PreparedStatement, index IdxT, v uint32) State {
-	state := C.duckdb_bind_uint32(preparedStmt.data(), index.data(), C.uint32(v))
+func BindUInt16(preparedStmt PreparedStatement, index uint64, v uint16) State {
+	state := C.duckdb_bind_uint16(preparedStmt.data(), C.idx_t(index), C.uint16_t(v))
 	return State(state)
 }
 
-func BindUInt64(preparedStmt PreparedStatement, index IdxT, v uint64) State {
-	state := C.duckdb_bind_uint64(preparedStmt.data(), index.data(), C.uint64(v))
+func BindUInt32(preparedStmt PreparedStatement, index uint64, v uint32) State {
+	state := C.duckdb_bind_uint32(preparedStmt.data(), C.idx_t(index), C.uint32_t(v))
 	return State(state)
 }
 
-func BindFloat(preparedStmt PreparedStatement, index IdxT, v float32) State {
-	state := C.duckdb_bind_float(preparedStmt.data(), index.data(), C.float(v))
+func BindUInt64(preparedStmt PreparedStatement, index uint64, v uint64) State {
+	state := C.duckdb_bind_uint64(preparedStmt.data(), C.idx_t(index), C.uint64_t(v))
 	return State(state)
 }
 
-func BindDouble(preparedStmt PreparedStatement, index IdxT, v float64) State {
-	state := C.duckdb_bind_double(preparedStmt.data(), index.data(), C.double(v))
+func BindFloat(preparedStmt PreparedStatement, index uint64, v float32) State {
+	state := C.duckdb_bind_float(preparedStmt.data(), C.idx_t(index), C.float(v))
 	return State(state)
 }
 
-func BindDate(preparedStmt PreparedStatement, index IdxT, v Date) State {
-	state := C.duckdb_bind_date(preparedStmt.data(), index.data(), v.data())
+func BindDouble(preparedStmt PreparedStatement, index uint64, v float64) State {
+	state := C.duckdb_bind_double(preparedStmt.data(), C.idx_t(index), C.double(v))
 	return State(state)
 }
 
-func BindTime(preparedStmt PreparedStatement, index IdxT, v Time) State {
-	state := C.duckdb_bind_time(preparedStmt.data(), index.data(), v.data())
+func BindDate(preparedStmt PreparedStatement, index uint64, v Date) State {
+	state := C.duckdb_bind_date(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-func BindTimestamp(preparedStmt PreparedStatement, index IdxT, v Timestamp) State {
-	state := C.duckdb_bind_timestamp(preparedStmt.data(), index.data(), v.data())
+func BindTime(preparedStmt PreparedStatement, index uint64, v Time) State {
+	state := C.duckdb_bind_time(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-//#define duckdb_bind_timestamp_tz                       duckdb_ext_api.duckdb_bind_timestamp_tz
-
-func BindInterval(preparedStmt PreparedStatement, index IdxT, v Interval) State {
-	state := C.duckdb_bind_interval(preparedStmt.data(), index.data(), v.data())
+func BindTimestamp(preparedStmt PreparedStatement, index uint64, v Timestamp) State {
+	state := C.duckdb_bind_timestamp(preparedStmt.data(), C.idx_t(index), v.data())
 	return State(state)
 }
 
-func BindVarchar(preparedStmt PreparedStatement, index IdxT, v string) State {
+// duckdb_bind_timestamp_tz
+
+func BindInterval(preparedStmt PreparedStatement, index uint64, v Interval) State {
+	state := C.duckdb_bind_interval(preparedStmt.data(), C.idx_t(index), v.data())
+	return State(state)
+}
+
+func BindVarchar(preparedStmt PreparedStatement, index uint64, v string) State {
 	cStr := C.CString(v)
 	defer Free(unsafe.Pointer(cStr))
 
-	state := C.duckdb_bind_varchar(preparedStmt.data(), index.data(), cStr)
+	state := C.duckdb_bind_varchar(preparedStmt.data(), C.idx_t(index), cStr)
 	return State(state)
 }
 
-//#define duckdb_bind_varchar_length                     duckdb_ext_api.duckdb_bind_varchar_length
+// duckdb_bind_varchar_length
 
-func BindBlob(preparedStmt PreparedStatement, index IdxT, v []byte) State {
+func BindBlob(preparedStmt PreparedStatement, index uint64, v []byte) State {
 	cBytes := C.CBytes(v)
 	defer Free(unsafe.Pointer(cBytes))
 
-	state := C.duckdb_bind_blob(preparedStmt.data(), index.data(), cBytes, IdxT(len(v)))
+	state := C.duckdb_bind_blob(preparedStmt.data(), C.idx_t(index), cBytes, C.idx_t(len(v)))
 	return State(state)
 }
 
-func BindNull(preparedStmt PreparedStatement, index IdxT) State {
-	state := C.duckdb_bind_null(preparedStmt.data(), index.data())
+func BindNull(preparedStmt PreparedStatement, index uint64) State {
+	state := C.duckdb_bind_null(preparedStmt.data(), C.idx_t(index))
 	return State(state)
 }
 
-//#define duckdb_execute_prepared                        duckdb_ext_api.duckdb_execute_prepared
+// ------------------------------------------------------------------ //
+// Execute Prepared Statements (many are deprecated)
+// ------------------------------------------------------------------ //
 
-func ExtractStatements(conn Connection, query string, outExtractedStmts *ExtractedStatements) IdxT {
+// duckdb_execute_prepared
+
+// ------------------------------------------------------------------ //
+// Extract Statements
+// ------------------------------------------------------------------ //
+
+func ExtractStatements(conn Connection, query string, outExtractedStmts *ExtractedStatements) uint64 {
 	cQuery := C.CString(query)
 	defer Free(unsafe.Pointer(cQuery))
 
 	var extractedStmts C.duckdb_extracted_statements
 	count := C.duckdb_extract_statements(conn.data(), cQuery, &extractedStmts)
 	outExtractedStmts.Ptr = unsafe.Pointer(extractedStmts)
-	return IdxT(count)
+	return uint64(count)
 }
 
-func PrepareExtractedStatement(conn Connection, extractedStmts ExtractedStatements, index IdxT, outPreparedStmt *PreparedStatement) State {
+func PrepareExtractedStatement(conn Connection, extractedStmts ExtractedStatements, index uint64, outPreparedStmt *PreparedStatement) State {
 	var preparedStmt C.duckdb_prepared_statement
-	state := C.duckdb_prepare_extracted_statement(conn.data(), extractedStmts.data(), index.data(), &preparedStmt)
+	state := C.duckdb_prepare_extracted_statement(conn.data(), extractedStmts.data(), C.idx_t(index), &preparedStmt)
 	outPreparedStmt.Ptr = unsafe.Pointer(preparedStmt)
 	return State(state)
 }
@@ -830,13 +932,21 @@ func DestroyExtracted(extractedStmts *ExtractedStatements) {
 	extractedStmts.Ptr = nil
 }
 
-//#define duckdb_pending_prepared                        duckdb_ext_api.duckdb_pending_prepared
-//#define duckdb_destroy_pending                         duckdb_ext_api.duckdb_destroy_pending
-//#define duckdb_pending_error                           duckdb_ext_api.duckdb_pending_error
-//#define duckdb_pending_execute_task                    duckdb_ext_api.duckdb_pending_execute_task
-//#define duckdb_pending_execute_check_state             duckdb_ext_api.duckdb_pending_execute_check_state
-//#define duckdb_execute_pending                         duckdb_ext_api.duckdb_execute_pending
-//#define duckdb_pending_execution_is_finished           duckdb_ext_api.duckdb_pending_execution_is_finished
+// ------------------------------------------------------------------ //
+// Pending Result Interface
+// ------------------------------------------------------------------ //
+
+// duckdb_pending_prepared
+// duckdb_destroy_pending
+// duckdb_pending_error
+// duckdb_pending_execute_task
+// duckdb_pending_execute_check_state
+// duckdb_execute_pending
+// duckdb_pending_execution_is_finished
+
+// ------------------------------------------------------------------ //
+// Value Interface
+// ------------------------------------------------------------------ //
 
 func DestroyValue(v *Value) {
 	data := v.data()
@@ -844,63 +954,70 @@ func DestroyValue(v *Value) {
 	v.Ptr = nil
 }
 
-//#define duckdb_create_varchar                          duckdb_ext_api.duckdb_create_varchar
-//#define duckdb_create_varchar_length                   duckdb_ext_api.duckdb_create_varchar_length
-//#define duckdb_create_bool                             duckdb_ext_api.duckdb_create_bool
-//#define duckdb_create_int8                             duckdb_ext_api.duckdb_create_int8
-//#define duckdb_create_uint8                            duckdb_ext_api.duckdb_create_uint8
-//#define duckdb_create_int16                            duckdb_ext_api.duckdb_create_int16
-//#define duckdb_create_uint16                           duckdb_ext_api.duckdb_create_uint16
-//#define duckdb_create_int32                            duckdb_ext_api.duckdb_create_int32
-//#define duckdb_create_uint32                           duckdb_ext_api.duckdb_create_uint32
-//#define duckdb_create_uint64                           duckdb_ext_api.duckdb_create_uint64
-//#define duckdb_create_int64                            duckdb_ext_api.duckdb_create_int64
-//#define duckdb_create_hugeint                          duckdb_ext_api.duckdb_create_hugeint
-//#define duckdb_create_uhugeint                         duckdb_ext_api.duckdb_create_uhugeint
-//#define duckdb_create_varint                           duckdb_ext_api.duckdb_create_varint
-//#define duckdb_create_decimal                          duckdb_ext_api.duckdb_create_decimal
-//#define duckdb_create_float                            duckdb_ext_api.duckdb_create_float
-//#define duckdb_create_double                           duckdb_ext_api.duckdb_create_double
-//#define duckdb_create_date                             duckdb_ext_api.duckdb_create_date
-//#define duckdb_create_time                             duckdb_ext_api.duckdb_create_time
-//#define duckdb_create_time_tz_value                    duckdb_ext_api.duckdb_create_time_tz_value
-//#define duckdb_create_timestamp                        duckdb_ext_api.duckdb_create_timestamp
-//#define duckdb_create_timestamp_tz                     duckdb_ext_api.duckdb_create_timestamp_tz
-//#define duckdb_create_timestamp_s                      duckdb_ext_api.duckdb_create_timestamp_s
-//#define duckdb_create_timestamp_ms                     duckdb_ext_api.duckdb_create_timestamp_ms
-//#define duckdb_create_timestamp_ns                     duckdb_ext_api.duckdb_create_timestamp_ns
-//#define duckdb_create_interval                         duckdb_ext_api.duckdb_create_interval
-//#define duckdb_create_blob                             duckdb_ext_api.duckdb_create_blob
-//#define duckdb_create_bit                              duckdb_ext_api.duckdb_create_bit
-//#define duckdb_create_uuid                             duckdb_ext_api.duckdb_create_uuid
-//#define duckdb_get_bool                                duckdb_ext_api.duckdb_get_bool
-//#define duckdb_get_int8                                duckdb_ext_api.duckdb_get_int8
-//#define duckdb_get_uint8                               duckdb_ext_api.duckdb_get_uint8
-//#define duckdb_get_int16                               duckdb_ext_api.duckdb_get_int16
-//#define duckdb_get_uint16                              duckdb_ext_api.duckdb_get_uint16
-//#define duckdb_get_int32                               duckdb_ext_api.duckdb_get_int32
-//#define duckdb_get_uint32                              duckdb_ext_api.duckdb_get_uint32
-//#define duckdb_get_int64                               duckdb_ext_api.duckdb_get_int64
-//#define duckdb_get_uint64                              duckdb_ext_api.duckdb_get_uint64
-//#define duckdb_get_hugeint                             duckdb_ext_api.duckdb_get_hugeint
-//#define duckdb_get_uhugeint                            duckdb_ext_api.duckdb_get_uhugeint
-//#define duckdb_get_varint                              duckdb_ext_api.duckdb_get_varint
-//#define duckdb_get_decimal                             duckdb_ext_api.duckdb_get_decimal
-//#define duckdb_get_float                               duckdb_ext_api.duckdb_get_float
-//#define duckdb_get_double                              duckdb_ext_api.duckdb_get_double
-//#define duckdb_get_date                                duckdb_ext_api.duckdb_get_date
-//#define duckdb_get_time                                duckdb_ext_api.duckdb_get_time
-//#define duckdb_get_time_tz                             duckdb_ext_api.duckdb_get_time_tz
-//#define duckdb_get_timestamp                           duckdb_ext_api.duckdb_get_timestamp
-//#define duckdb_get_timestamp_tz                        duckdb_ext_api.duckdb_get_timestamp_tz
-//#define duckdb_get_timestamp_s                         duckdb_ext_api.duckdb_get_timestamp_s
-//#define duckdb_get_timestamp_ms                        duckdb_ext_api.duckdb_get_timestamp_ms
-//#define duckdb_get_timestamp_ns                        duckdb_ext_api.duckdb_get_timestamp_ns
-//#define duckdb_get_interval                            duckdb_ext_api.duckdb_get_interval
-//#define duckdb_get_value_type                          duckdb_ext_api.duckdb_get_value_type
-//#define duckdb_get_blob                                duckdb_ext_api.duckdb_get_blob
-//#define duckdb_get_bit                                 duckdb_ext_api.duckdb_get_bit
-//#define duckdb_get_uuid                                duckdb_ext_api.duckdb_get_uuid
+// duckdb_create_varchar
+// duckdb_create_varchar_length
+// duckdb_create_bool
+// duckdb_create_int8
+// duckdb_create_uint8
+// duckdb_create_int16
+// duckdb_create_uint16
+// duckdb_create_int32
+// duckdb_create_uint32
+// duckdb_create_uint64
+// duckdb_create_int64
+// duckdb_create_hugeint
+// duckdb_create_uhugeint
+// duckdb_create_varint
+// duckdb_create_decimal
+// duckdb_create_float
+// duckdb_create_double
+// duckdb_create_date
+// duckdb_create_time
+
+func CreateTimeTZValue(timeTZ TimeTZ) Value {
+	v := C.duckdb_create_time_tz_value(timeTZ.data())
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// duckdb_create_timestamp
+// duckdb_create_timestamp_tz
+// duckdb_create_timestamp_s
+// duckdb_create_timestamp_ms
+// duckdb_create_timestamp_ns
+// duckdb_create_interval
+// duckdb_create_blob
+// duckdb_create_bit
+// duckdb_create_uuid
+// duckdb_get_bool
+// duckdb_get_int8
+// duckdb_get_uint8
+// duckdb_get_int16
+// duckdb_get_uint16
+// duckdb_get_int32
+// duckdb_get_uint32
+// duckdb_get_int64
+// duckdb_get_uint64
+// duckdb_get_hugeint
+// duckdb_get_uhugeint
+// duckdb_get_varint
+// duckdb_get_decimal
+// duckdb_get_float
+// duckdb_get_double
+// duckdb_get_date
+// duckdb_get_time
+// duckdb_get_time_tz
+// duckdb_get_timestamp
+// duckdb_get_timestamp_tz
+// duckdb_get_timestamp_s
+// duckdb_get_timestamp_ms
+// duckdb_get_timestamp_ns
+// duckdb_get_interval
+// duckdb_get_value_type
+// duckdb_get_blob
+// duckdb_get_bit
+// duckdb_get_uuid
 
 func GetVarchar(v Value) string {
 	cStr := C.duckdb_get_varchar(v.data())
@@ -908,36 +1025,40 @@ func GetVarchar(v Value) string {
 	return C.GoString(cStr)
 }
 
-//#define duckdb_create_struct_value                     duckdb_ext_api.duckdb_create_struct_value
-//#define duckdb_create_list_value                       duckdb_ext_api.duckdb_create_list_value
-//#define duckdb_create_array_value                      duckdb_ext_api.duckdb_create_array_value
+// duckdb_create_struct_value
+// duckdb_create_list_value
+// duckdb_create_array_value
 
-func GetMapSize(v Value) IdxT {
+func GetMapSize(v Value) uint64 {
 	size := C.duckdb_get_map_size(v.data())
-	return IdxT(size)
+	return uint64(size)
 }
 
-func GetMapKey(v Value, index IdxT) Value {
-	value := C.duckdb_get_map_key(v.data(), index.data())
+func GetMapKey(v Value, index uint64) Value {
+	value := C.duckdb_get_map_key(v.data(), C.idx_t(index))
 	return Value{
 		Ptr: unsafe.Pointer(value),
 	}
 }
 
-func GetMapValue(v Value, index IdxT) Value {
-	value := C.duckdb_get_map_value(v.data(), index.data())
+func GetMapValue(v Value, index uint64) Value {
+	value := C.duckdb_get_map_value(v.data(), C.idx_t(index))
 	return Value{
 		Ptr: unsafe.Pointer(value),
 	}
 }
 
-//#define duckdb_is_null_value                           duckdb_ext_api.duckdb_is_null_value
-//#define duckdb_create_null_value                       duckdb_ext_api.duckdb_create_null_value
-//#define duckdb_get_list_size                           duckdb_ext_api.duckdb_get_list_size
-//#define duckdb_get_list_child                          duckdb_ext_api.duckdb_get_list_child
-//#define duckdb_create_enum_value                       duckdb_ext_api.duckdb_create_enum_value
-//#define duckdb_get_enum_value                          duckdb_ext_api.duckdb_get_enum_value
-//#define duckdb_get_struct_child                        duckdb_ext_api.duckdb_get_struct_child
+// duckdb_is_null_value
+// duckdb_create_null_value
+// duckdb_get_list_size
+// duckdb_get_list_child
+// duckdb_create_enum_value
+// duckdb_get_enum_value
+// duckdb_get_struct_child
+
+// ------------------------------------------------------------------ //
+// Logical Type Interface
+// ------------------------------------------------------------------ //
 
 func CreateLogicalType(t Type) LogicalType {
 	logicalType := C.duckdb_create_logical_type(t.data())
@@ -946,8 +1067,8 @@ func CreateLogicalType(t Type) LogicalType {
 	}
 }
 
-//#define duckdb_logical_type_get_alias                  duckdb_ext_api.duckdb_logical_type_get_alias
-//#define duckdb_logical_type_set_alias                  duckdb_ext_api.duckdb_logical_type_set_alias
+// duckdb_logical_type_get_alias
+// duckdb_logical_type_set_alias
 
 func CreateListType(child LogicalType) LogicalType {
 	logicalType := C.duckdb_create_list_type(child.data())
@@ -956,8 +1077,8 @@ func CreateListType(child LogicalType) LogicalType {
 	}
 }
 
-func CreateArrayType(child LogicalType, size IdxT) LogicalType {
-	logicalType := C.duckdb_create_array_type(child.data(), size.data())
+func CreateArrayType(child LogicalType, size uint64) LogicalType {
+	logicalType := C.duckdb_create_array_type(child.data(), C.idx_t(size))
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
@@ -970,10 +1091,10 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 	}
 }
 
-//#define duckdb_create_union_type                       duckdb_ext_api.duckdb_create_union_type
+// duckdb_create_union_type
 
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	// FIXME: unify code with other slice alloc functions.
+	// FIXME: Unify code with other slice allocation functions.
 
 	count := len(types)
 	size := C.size_t(unsafe.Sizeof(C.duckdb_logical_type(nil)))
@@ -1006,7 +1127,7 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 }
 
 func CreateEnumType(names []string) LogicalType {
-	// FIXME: unify code with other slice alloc functions.
+	// FIXME: Unify code with other slice allocation functions.
 
 	count := len(names)
 	size := C.size_t(unsafe.Sizeof((*C.char)(nil)))
@@ -1040,23 +1161,23 @@ func GetTypeId(logicalType LogicalType) Type {
 	return Type(t)
 }
 
-//#define duckdb_decimal_width                           duckdb_ext_api.duckdb_decimal_width
-//#define duckdb_decimal_scale                           duckdb_ext_api.duckdb_decimal_scale
-//#define duckdb_decimal_internal_type                   duckdb_ext_api.duckdb_decimal_internal_type
-//#define duckdb_enum_internal_type                      duckdb_ext_api.duckdb_enum_internal_type
-//#define duckdb_enum_dictionary_size                    duckdb_ext_api.duckdb_enum_dictionary_size
-//#define duckdb_enum_dictionary_value                   duckdb_ext_api.duckdb_enum_dictionary_value
-//#define duckdb_list_type_child_type                    duckdb_ext_api.duckdb_list_type_child_type
-//#define duckdb_array_type_child_type                   duckdb_ext_api.duckdb_array_type_child_type
-//#define duckdb_array_type_array_size                   duckdb_ext_api.duckdb_array_type_array_size
-//#define duckdb_map_type_key_type                       duckdb_ext_api.duckdb_map_type_key_type
-//#define duckdb_map_type_value_type                     duckdb_ext_api.duckdb_map_type_value_type
-//#define duckdb_struct_type_child_count                 duckdb_ext_api.duckdb_struct_type_child_count
-//#define duckdb_struct_type_child_name                  duckdb_ext_api.duckdb_struct_type_child_name
-//#define duckdb_struct_type_child_type                  duckdb_ext_api.duckdb_struct_type_child_type
-//#define duckdb_union_type_member_count                 duckdb_ext_api.duckdb_union_type_member_count
-//#define duckdb_union_type_member_name                  duckdb_ext_api.duckdb_union_type_member_name
-//#define duckdb_union_type_member_type                  duckdb_ext_api.duckdb_union_type_member_type
+// duckdb_decimal_width
+// duckdb_decimal_scale
+// duckdb_decimal_internal_type
+// duckdb_enum_internal_type
+// duckdb_enum_dictionary_size
+// duckdb_enum_dictionary_value
+// duckdb_list_type_child_type
+// duckdb_array_type_child_type
+// duckdb_array_type_array_size
+// duckdb_map_type_key_type
+// duckdb_map_type_value_type
+// duckdb_struct_type_child_count
+// duckdb_struct_type_child_name
+// duckdb_struct_type_child_type
+// duckdb_union_type_member_count
+// duckdb_union_type_member_name
+// duckdb_union_type_member_type
 
 func DestroyLogicalType(logicalType *LogicalType) {
 	data := logicalType.data()
@@ -1064,30 +1185,49 @@ func DestroyLogicalType(logicalType *LogicalType) {
 	logicalType.Ptr = nil
 }
 
-//#define duckdb_register_logical_type                   duckdb_ext_api.duckdb_register_logical_type
-//#define duckdb_create_data_chunk                       duckdb_ext_api.duckdb_create_data_chunk
-//#define duckdb_destroy_data_chunk                      duckdb_ext_api.duckdb_destroy_data_chunk
-//#define duckdb_data_chunk_reset                        duckdb_ext_api.duckdb_data_chunk_reset
-//#define duckdb_data_chunk_get_column_count             duckdb_ext_api.duckdb_data_chunk_get_column_count
-//#define duckdb_data_chunk_get_vector                   duckdb_ext_api.duckdb_data_chunk_get_vector
-//#define duckdb_data_chunk_get_size                     duckdb_ext_api.duckdb_data_chunk_get_size
-//#define duckdb_data_chunk_set_size                     duckdb_ext_api.duckdb_data_chunk_set_size
-//#define duckdb_vector_get_column_type                  duckdb_ext_api.duckdb_vector_get_column_type
-//#define duckdb_vector_get_data                         duckdb_ext_api.duckdb_vector_get_data
-//#define duckdb_vector_get_validity                     duckdb_ext_api.duckdb_vector_get_validity
-//#define duckdb_vector_ensure_validity_writable         duckdb_ext_api.duckdb_vector_ensure_validity_writable
-//#define duckdb_vector_assign_string_element            duckdb_ext_api.duckdb_vector_assign_string_element
-//#define duckdb_vector_assign_string_element_len        duckdb_ext_api.duckdb_vector_assign_string_element_len
-//#define duckdb_list_vector_get_child                   duckdb_ext_api.duckdb_list_vector_get_child
-//#define duckdb_list_vector_get_size                    duckdb_ext_api.duckdb_list_vector_get_size
-//#define duckdb_list_vector_set_size                    duckdb_ext_api.duckdb_list_vector_set_size
-//#define duckdb_list_vector_reserve                     duckdb_ext_api.duckdb_list_vector_reserve
-//#define duckdb_struct_vector_get_child                 duckdb_ext_api.duckdb_struct_vector_get_child
-//#define duckdb_array_vector_get_child                  duckdb_ext_api.duckdb_array_vector_get_child
-//#define duckdb_validity_row_is_valid                   duckdb_ext_api.duckdb_validity_row_is_valid
-//#define duckdb_validity_set_row_validity               duckdb_ext_api.duckdb_validity_set_row_validity
-//#define duckdb_validity_set_row_invalid                duckdb_ext_api.duckdb_validity_set_row_invalid
-//#define duckdb_validity_set_row_valid                  duckdb_ext_api.duckdb_validity_set_row_valid
+// duckdb_register_logical_type
+
+// ------------------------------------------------------------------ //
+// Data Chunk Interface
+// ------------------------------------------------------------------ //
+
+// duckdb_create_data_chunk
+// duckdb_destroy_data_chunk
+// duckdb_data_chunk_reset
+// duckdb_data_chunk_get_column_count
+// duckdb_data_chunk_get_vector
+// duckdb_data_chunk_get_size
+// duckdb_data_chunk_set_size
+
+// ------------------------------------------------------------------ //
+// Vector Interface
+// ------------------------------------------------------------------ //
+
+// duckdb_vector_get_column_type
+// duckdb_vector_get_data
+// duckdb_vector_get_validity
+// duckdb_vector_ensure_validity_writable
+// duckdb_vector_assign_string_element
+// duckdb_vector_assign_string_element_len
+// duckdb_list_vector_get_child
+// duckdb_list_vector_get_size
+// duckdb_list_vector_set_size
+// duckdb_list_vector_reserve
+// duckdb_struct_vector_get_child
+// duckdb_array_vector_get_child
+
+// ------------------------------------------------------------------ //
+// Validity Mask Functions
+// ------------------------------------------------------------------ //
+
+// duckdb_validity_row_is_valid
+// duckdb_validity_set_row_validity
+// duckdb_validity_set_row_invalid
+// duckdb_validity_set_row_valid
+
+// ------------------------------------------------------------------ //
+// Scalar Functions
+// ------------------------------------------------------------------ //
 
 func CreateScalarFunction() ScalarFunction {
 	f := C.duckdb_create_scalar_function()
@@ -1148,15 +1288,16 @@ func ScalarFunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
 	return unsafe.Pointer(ptr)
 }
 
-func ScalarFunctionSetError(info FunctionInfo, msg string) {
-	cMsg := C.CString(msg)
-	defer Free(unsafe.Pointer(cMsg))
-	C.duckdb_scalar_function_set_error(info.data(), cMsg)
+func ScalarFunctionSetError(info FunctionInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_scalar_function_set_error(info.data(), cErr)
 }
 
 func CreateScalarFunctionSet(name string) ScalarFunctionSet {
 	cName := C.CString(name)
 	defer Free(unsafe.Pointer(cName))
+
 	set := C.duckdb_create_scalar_function_set(cName)
 	return ScalarFunctionSet{
 		Ptr: unsafe.Pointer(set),
@@ -1179,65 +1320,96 @@ func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 	return State(state)
 }
 
-//#define duckdb_create_aggregate_function               duckdb_ext_api.duckdb_create_aggregate_function
-//#define duckdb_destroy_aggregate_function              duckdb_ext_api.duckdb_destroy_aggregate_function
-//#define duckdb_aggregate_function_set_name             duckdb_ext_api.duckdb_aggregate_function_set_name
-//#define duckdb_aggregate_function_add_parameter        duckdb_ext_api.duckdb_aggregate_function_add_parameter
-//#define duckdb_aggregate_function_set_return_type      duckdb_ext_api.duckdb_aggregate_function_set_return_type
-//#define duckdb_aggregate_function_set_functions        duckdb_ext_api.duckdb_aggregate_function_set_functions
-//#define duckdb_aggregate_function_set_destructor       duckdb_ext_api.duckdb_aggregate_function_set_destructor
-//#define duckdb_register_aggregate_function             duckdb_ext_api.duckdb_register_aggregate_function
-//#define duckdb_aggregate_function_set_special_handling duckdb_ext_api.duckdb_aggregate_function_set_special_handling
-//#define duckdb_aggregate_function_set_extra_info       duckdb_ext_api.duckdb_aggregate_function_set_extra_info
-//#define duckdb_aggregate_function_get_extra_info       duckdb_ext_api.duckdb_aggregate_function_get_extra_info
-//#define duckdb_aggregate_function_set_error            duckdb_ext_api.duckdb_aggregate_function_set_error
-//#define duckdb_create_aggregate_function_set           duckdb_ext_api.duckdb_create_aggregate_function_set
-//#define duckdb_destroy_aggregate_function_set          duckdb_ext_api.duckdb_destroy_aggregate_function_set
-//#define duckdb_add_aggregate_function_to_set           duckdb_ext_api.duckdb_add_aggregate_function_to_set
-//#define duckdb_register_aggregate_function_set         duckdb_ext_api.duckdb_register_aggregate_function_set
-//#define duckdb_create_table_function                   duckdb_ext_api.duckdb_create_table_function
-//#define duckdb_destroy_table_function                  duckdb_ext_api.duckdb_destroy_table_function
-//#define duckdb_table_function_set_name                 duckdb_ext_api.duckdb_table_function_set_name
-//#define duckdb_table_function_add_parameter            duckdb_ext_api.duckdb_table_function_add_parameter
-//#define duckdb_table_function_add_named_parameter      duckdb_ext_api.duckdb_table_function_add_named_parameter
-//#define duckdb_table_function_set_extra_info           duckdb_ext_api.duckdb_table_function_set_extra_info
-//#define duckdb_table_function_set_bind                 duckdb_ext_api.duckdb_table_function_set_bind
-//#define duckdb_table_function_set_init                 duckdb_ext_api.duckdb_table_function_set_init
-//#define duckdb_table_function_set_local_init           duckdb_ext_api.duckdb_table_function_set_local_init
-//#define duckdb_table_function_set_function             duckdb_ext_api.duckdb_table_function_set_function
-//#define duckdb_table_function_supports_projection_pushdown                                                             \
-//	duckdb_ext_api.duckdb_table_function_supports_projection_pushdown
-//#define duckdb_register_table_function              duckdb_ext_api.duckdb_register_table_function
-//#define duckdb_bind_get_extra_info                  duckdb_ext_api.duckdb_bind_get_extra_info
-//#define duckdb_bind_add_result_column               duckdb_ext_api.duckdb_bind_add_result_column
-//#define duckdb_bind_get_parameter_count             duckdb_ext_api.duckdb_bind_get_parameter_count
-//#define duckdb_bind_get_parameter                   duckdb_ext_api.duckdb_bind_get_parameter
-//#define duckdb_bind_get_named_parameter             duckdb_ext_api.duckdb_bind_get_named_parameter
-//#define duckdb_bind_set_bind_data                   duckdb_ext_api.duckdb_bind_set_bind_data
-//#define duckdb_bind_set_cardinality                 duckdb_ext_api.duckdb_bind_set_cardinality
+// ------------------------------------------------------------------ //
+// Aggregate Functions
+// ------------------------------------------------------------------ //
 
-func BindSetError(info BindInfo, msg string) {
-	cMsg := C.CString(msg)
-	defer Free(unsafe.Pointer(cMsg))
-	C.duckdb_bind_set_error(info.data(), cMsg)
+// duckdb_create_aggregate_function
+// duckdb_destroy_aggregate_function
+// duckdb_aggregate_function_set_name
+// duckdb_aggregate_function_add_parameter
+// duckdb_aggregate_function_set_return_type
+// duckdb_aggregate_function_set_functions
+// duckdb_aggregate_function_set_destructor
+// duckdb_register_aggregate_function
+// duckdb_aggregate_function_set_special_handling
+// duckdb_aggregate_function_set_extra_info
+// duckdb_aggregate_function_get_extra_info
+// duckdb_aggregate_function_set_error
+// duckdb_create_aggregate_function_set
+// duckdb_destroy_aggregate_function_set
+// duckdb_add_aggregate_function_to_set
+// duckdb_register_aggregate_function_set
+
+// ------------------------------------------------------------------ //
+// Table Functions
+// ------------------------------------------------------------------ //
+
+// duckdb_create_table_function
+// duckdb_destroy_table_function
+// duckdb_table_function_set_name
+// duckdb_table_function_add_parameter
+// duckdb_table_function_add_named_parameter
+// duckdb_table_function_set_extra_info
+// duckdb_table_function_set_bind
+// duckdb_table_function_set_init
+// duckdb_table_function_set_local_init
+// duckdb_table_function_set_function
+// duckdb_table_function_supports_projection_pushdown
+// duckdb_register_table_function
+
+// ------------------------------------------------------------------ //
+// Table Function Bind
+// ------------------------------------------------------------------ //
+
+// duckdb_bind_get_extra_info
+// duckdb_bind_add_result_column
+// duckdb_bind_get_parameter_count
+// duckdb_bind_get_parameter
+// duckdb_bind_get_named_parameter
+// duckdb_bind_set_bind_data
+// duckdb_bind_set_cardinality
+
+func BindSetError(info BindInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_bind_set_error(info.data(), cErr)
 }
 
-//#define duckdb_init_get_extra_info                  duckdb_ext_api.duckdb_init_get_extra_info
-//#define duckdb_init_get_bind_data                   duckdb_ext_api.duckdb_init_get_bind_data
-//#define duckdb_init_set_init_data                   duckdb_ext_api.duckdb_init_set_init_data
-//#define duckdb_init_get_column_count                duckdb_ext_api.duckdb_init_get_column_count
-//#define duckdb_init_get_column_index                duckdb_ext_api.duckdb_init_get_column_index
-//#define duckdb_init_set_max_threads                 duckdb_ext_api.duckdb_init_set_max_threads
-//#define duckdb_init_set_error                       duckdb_ext_api.duckdb_init_set_error
-//#define duckdb_function_get_extra_info              duckdb_ext_api.duckdb_function_get_extra_info
-//#define duckdb_function_get_bind_data               duckdb_ext_api.duckdb_function_get_bind_data
-//#define duckdb_function_get_init_data               duckdb_ext_api.duckdb_function_get_init_data
-//#define duckdb_function_get_local_init_data         duckdb_ext_api.duckdb_function_get_local_init_data
-//#define duckdb_function_set_error                   duckdb_ext_api.duckdb_function_set_error
-//#define duckdb_add_replacement_scan                 duckdb_ext_api.duckdb_add_replacement_scan
-//#define duckdb_replacement_scan_set_function_name   duckdb_ext_api.duckdb_replacement_scan_set_function_name
-//#define duckdb_replacement_scan_add_parameter       duckdb_ext_api.duckdb_replacement_scan_add_parameter
-//#define duckdb_replacement_scan_set_error           duckdb_ext_api.duckdb_replacement_scan_set_error
+// ------------------------------------------------------------------ //
+// Table Function Init
+// ------------------------------------------------------------------ //
+
+// duckdb_init_get_extra_info
+// duckdb_init_get_bind_data
+// duckdb_init_set_init_data
+// duckdb_init_get_column_count
+// duckdb_init_get_column_index
+// duckdb_init_set_max_threads
+// duckdb_init_set_error
+
+// ------------------------------------------------------------------ //
+// Table Function
+// ------------------------------------------------------------------ //
+
+// duckdb_function_get_extra_info
+// duckdb_function_get_bind_data
+// duckdb_function_get_init_data
+// duckdb_function_get_local_init_data
+// duckdb_function_set_error
+
+// ------------------------------------------------------------------ //
+// Replacement Scans
+// ------------------------------------------------------------------ //
+
+// duckdb_add_replacement_scan
+// duckdb_replacement_scan_set_function_name
+// duckdb_replacement_scan_add_parameter
+// duckdb_replacement_scan_set_error
+
+// ------------------------------------------------------------------ //
+// Profiling Info
+// ------------------------------------------------------------------ //
 
 func GetProfilingInfo(conn Connection) ProfilingInfo {
 	info := C.duckdb_get_profiling_info(conn.data())
@@ -1246,7 +1418,7 @@ func GetProfilingInfo(conn Connection) ProfilingInfo {
 	}
 }
 
-//#define duckdb_profiling_info_get_value             duckdb_ext_api.duckdb_profiling_info_get_value
+// duckdb_profiling_info_get_value
 
 func ProfilingInfoGetMetrics(info ProfilingInfo) Value {
 	value := C.duckdb_profiling_info_get_metrics(info.data())
@@ -1255,17 +1427,21 @@ func ProfilingInfoGetMetrics(info ProfilingInfo) Value {
 	}
 }
 
-func ProfilingInfoGetChildCount(info ProfilingInfo) IdxT {
+func ProfilingInfoGetChildCount(info ProfilingInfo) uint64 {
 	count := C.duckdb_profiling_info_get_child_count(info.data())
-	return IdxT(count)
+	return uint64(count)
 }
 
-func ProfilingInfoGetChild(info ProfilingInfo, index IdxT) ProfilingInfo {
-	child := C.duckdb_profiling_info_get_child(info.data(), index.data())
+func ProfilingInfoGetChild(info ProfilingInfo, index uint64) ProfilingInfo {
+	child := C.duckdb_profiling_info_get_child(info.data(), C.idx_t(index))
 	return ProfilingInfo{
 		Ptr: unsafe.Pointer(child),
 	}
 }
+
+// ------------------------------------------------------------------ //
+// Appender
+// ------------------------------------------------------------------ //
 
 func AppenderCreate(conn Connection, schema string, table string, outAppender *Appender) State {
 	cSchema := C.CString(schema)
@@ -1280,15 +1456,15 @@ func AppenderCreate(conn Connection, schema string, table string, outAppender *A
 	return State(state)
 }
 
-//#define duckdb_appender_create_ext                  duckdb_ext_api.duckdb_appender_create_ext
+// duckdb_appender_create_ext
 
-func AppenderColumnCount(appender Appender) IdxT {
+func AppenderColumnCount(appender Appender) uint64 {
 	count := C.duckdb_appender_column_count(appender.data())
-	return IdxT(count)
+	return uint64(count)
 }
 
-func AppenderColumnType(appender Appender, index IdxT) LogicalType {
-	logicalType := C.duckdb_appender_column_type(appender.data(), index.data())
+func AppenderColumnType(appender Appender, index uint64) LogicalType {
+	logicalType := C.duckdb_appender_column_type(appender.data(), C.idx_t(index))
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
@@ -1316,101 +1492,114 @@ func AppenderDestroy(appender *Appender) State {
 	return State(state)
 }
 
-//#define duckdb_appender_add_column                  duckdb_ext_api.duckdb_appender_add_column
-//#define duckdb_appender_clear_columns               duckdb_ext_api.duckdb_appender_clear_columns
-//#define duckdb_appender_begin_row                   duckdb_ext_api.duckdb_appender_begin_row
-//#define duckdb_appender_end_row                     duckdb_ext_api.duckdb_appender_end_row
-//#define duckdb_append_default                       duckdb_ext_api.duckdb_append_default
-//#define duckdb_append_bool                          duckdb_ext_api.duckdb_append_bool
-//#define duckdb_append_int8                          duckdb_ext_api.duckdb_append_int8
-//#define duckdb_append_int16                         duckdb_ext_api.duckdb_append_int16
-//#define duckdb_append_int32                         duckdb_ext_api.duckdb_append_int32
-//#define duckdb_append_int64                         duckdb_ext_api.duckdb_append_int64
-//#define duckdb_append_hugeint                       duckdb_ext_api.duckdb_append_hugeint
-//#define duckdb_append_uint8                         duckdb_ext_api.duckdb_append_uint8
-//#define duckdb_append_uint16                        duckdb_ext_api.duckdb_append_uint16
-//#define duckdb_append_uint32                        duckdb_ext_api.duckdb_append_uint32
-//#define duckdb_append_uint64                        duckdb_ext_api.duckdb_append_uint64
-//#define duckdb_append_uhugeint                      duckdb_ext_api.duckdb_append_uhugeint
-//#define duckdb_append_float                         duckdb_ext_api.duckdb_append_float
-//#define duckdb_append_double                        duckdb_ext_api.duckdb_append_double
-//#define duckdb_append_date                          duckdb_ext_api.duckdb_append_date
-//#define duckdb_append_time                          duckdb_ext_api.duckdb_append_time
-//#define duckdb_append_timestamp                     duckdb_ext_api.duckdb_append_timestamp
-//#define duckdb_append_interval                      duckdb_ext_api.duckdb_append_interval
-//#define duckdb_append_varchar                       duckdb_ext_api.duckdb_append_varchar
-//#define duckdb_append_varchar_length                duckdb_ext_api.duckdb_append_varchar_length
-//#define duckdb_append_blob                          duckdb_ext_api.duckdb_append_blob
-//#define duckdb_append_null                          duckdb_ext_api.duckdb_append_null
-//#define duckdb_append_value                         duckdb_ext_api.duckdb_append_value
+// duckdb_appender_add_column
+// duckdb_appender_clear_columns
+// duckdb_appender_begin_row
+// duckdb_appender_end_row
+// duckdb_append_default
+// duckdb_append_bool
+// duckdb_append_int8
+// duckdb_append_int16
+// duckdb_append_int32
+// duckdb_append_int64
+// duckdb_append_hugeint
+// duckdb_append_uint8
+// duckdb_append_uint16
+// duckdb_append_uint32
+// duckdb_append_uint64
+// duckdb_append_uhugeint
+// duckdb_append_float
+// duckdb_append_double
+// duckdb_append_date
+// duckdb_append_time
+// duckdb_append_timestamp
+// duckdb_append_interval
+// duckdb_append_varchar
+// duckdb_append_varchar_length
+// duckdb_append_blob
+// duckdb_append_null
+// duckdb_append_value
 
 func AppendDataChunk(appender Appender, chunk DataChunk) State {
 	state := C.duckdb_append_data_chunk(appender.data(), chunk.data())
 	return State(state)
 }
 
-//#define duckdb_table_description_create             duckdb_ext_api.duckdb_table_description_create
-//#define duckdb_table_description_create_ext         duckdb_ext_api.duckdb_table_description_create_ext
-//#define duckdb_table_description_destroy            duckdb_ext_api.duckdb_table_description_destroy
-//#define duckdb_table_description_error              duckdb_ext_api.duckdb_table_description_error
-//#define duckdb_column_has_default                   duckdb_ext_api.duckdb_column_has_default
-//#define duckdb_table_description_get_column_name    duckdb_ext_api.duckdb_table_description_get_column_name
-//#define duckdb_execute_tasks                        duckdb_ext_api.duckdb_execute_tasks
-//#define duckdb_create_task_state                    duckdb_ext_api.duckdb_create_task_state
-//#define duckdb_execute_tasks_state                  duckdb_ext_api.duckdb_execute_tasks_state
-//#define duckdb_execute_n_tasks_state                duckdb_ext_api.duckdb_execute_n_tasks_state
-//#define duckdb_finish_execution                     duckdb_ext_api.duckdb_finish_execution
-//#define duckdb_task_state_is_finished               duckdb_ext_api.duckdb_task_state_is_finished
-//#define duckdb_destroy_task_state                   duckdb_ext_api.duckdb_destroy_task_state
-//#define duckdb_execution_is_finished                duckdb_ext_api.duckdb_execution_is_finished
-//#define duckdb_fetch_chunk                          duckdb_ext_api.duckdb_fetch_chunk
-//#define duckdb_create_cast_function                 duckdb_ext_api.duckdb_create_cast_function
-//#define duckdb_cast_function_set_source_type        duckdb_ext_api.duckdb_cast_function_set_source_type
-//#define duckdb_cast_function_set_target_type        duckdb_ext_api.duckdb_cast_function_set_target_type
-//#define duckdb_cast_function_set_implicit_cast_cost duckdb_ext_api.duckdb_cast_function_set_implicit_cast_cost
-//#define duckdb_cast_function_set_function           duckdb_ext_api.duckdb_cast_function_set_function
-//#define duckdb_cast_function_set_extra_info         duckdb_ext_api.duckdb_cast_function_set_extra_info
-//#define duckdb_cast_function_get_extra_info         duckdb_ext_api.duckdb_cast_function_get_extra_info
-//#define duckdb_cast_function_get_cast_mode          duckdb_ext_api.duckdb_cast_function_get_cast_mode
-//#define duckdb_cast_function_set_error              duckdb_ext_api.duckdb_cast_function_set_error
-//#define duckdb_cast_function_set_row_error          duckdb_ext_api.duckdb_cast_function_set_row_error
-//#define duckdb_register_cast_function               duckdb_ext_api.duckdb_register_cast_function
-//#define duckdb_destroy_cast_function                duckdb_ext_api.duckdb_destroy_cast_function
-//
-//// Version unstable_deprecated
-//#define duckdb_row_count                  duckdb_ext_api.duckdb_row_count
-//#define duckdb_column_data                duckdb_ext_api.duckdb_column_data
-//#define duckdb_nullmask_data              duckdb_ext_api.duckdb_nullmask_data
-//#define duckdb_result_get_chunk           duckdb_ext_api.duckdb_result_get_chunk
-//#define duckdb_result_is_streaming        duckdb_ext_api.duckdb_result_is_streaming
-//#define duckdb_result_chunk_count         duckdb_ext_api.duckdb_result_chunk_count
-//#define duckdb_value_boolean              duckdb_ext_api.duckdb_value_boolean
-//#define duckdb_value_int8                 duckdb_ext_api.duckdb_value_int8
-//#define duckdb_value_int16                duckdb_ext_api.duckdb_value_int16
-//#define duckdb_value_int32                duckdb_ext_api.duckdb_value_int32
-//#define duckdb_value_int64                duckdb_ext_api.duckdb_value_int64
-//#define duckdb_value_hugeint              duckdb_ext_api.duckdb_value_hugeint
-//#define duckdb_value_uhugeint             duckdb_ext_api.duckdb_value_uhugeint
-//#define duckdb_value_decimal              duckdb_ext_api.duckdb_value_decimal
-//#define duckdb_value_uint8                duckdb_ext_api.duckdb_value_uint8
-//#define duckdb_value_uint16               duckdb_ext_api.duckdb_value_uint16
-//#define duckdb_value_uint32               duckdb_ext_api.duckdb_value_uint32
-//#define duckdb_value_uint64               duckdb_ext_api.duckdb_value_uint64
-//#define duckdb_value_float                duckdb_ext_api.duckdb_value_float
-//#define duckdb_value_double               duckdb_ext_api.duckdb_value_double
-//#define duckdb_value_date                 duckdb_ext_api.duckdb_value_date
-//#define duckdb_value_time                 duckdb_ext_api.duckdb_value_time
-//#define duckdb_value_timestamp            duckdb_ext_api.duckdb_value_timestamp
-//#define duckdb_value_interval             duckdb_ext_api.duckdb_value_interval
-//#define duckdb_value_varchar              duckdb_ext_api.duckdb_value_varchar
-//#define duckdb_value_string               duckdb_ext_api.duckdb_value_string
-//#define duckdb_value_varchar_internal     duckdb_ext_api.duckdb_value_varchar_internal
-//#define duckdb_value_string_internal      duckdb_ext_api.duckdb_value_string_internal
-//#define duckdb_value_blob                 duckdb_ext_api.duckdb_value_blob
-//#define duckdb_value_is_null              duckdb_ext_api.duckdb_value_is_null
-//#define duckdb_execute_prepared_streaming duckdb_ext_api.duckdb_execute_prepared_streaming
-//#define duckdb_pending_prepared_streaming duckdb_ext_api.duckdb_pending_prepared_streaming
-//#define duckdb_query_arrow                duckdb_ext_api.duckdb_query_arrow
+// ------------------------------------------------------------------ //
+// Table Description
+// ------------------------------------------------------------------ //
+
+// duckdb_table_description_create
+// duckdb_table_description_create_ext
+// duckdb_table_description_destroy
+// duckdb_table_description_error
+// duckdb_column_has_default
+// duckdb_table_description_get_column_name
+// duckdb_execute_tasks
+// duckdb_create_task_state
+// duckdb_execute_tasks_state
+// duckdb_execute_n_tasks_state
+// duckdb_finish_execution
+// duckdb_task_state_is_finished
+// duckdb_destroy_task_state
+// duckdb_execution_is_finished
+// duckdb_fetch_chunk
+// duckdb_create_cast_function
+// duckdb_cast_function_set_source_type
+// duckdb_cast_function_set_target_type
+// duckdb_cast_function_set_implicit_cast_cost
+// duckdb_cast_function_set_function
+// duckdb_cast_function_set_extra_info
+// duckdb_cast_function_get_extra_info
+// duckdb_cast_function_get_cast_mode
+// duckdb_cast_function_set_error
+// duckdb_cast_function_set_row_error
+// duckdb_register_cast_function
+// duckdb_destroy_cast_function
+
+// duckdb_row_count
+// duckdb_column_data
+// duckdb_nullmask_data
+// duckdb_result_get_chunk
+// duckdb_result_is_streaming
+// duckdb_result_chunk_count
+// duckdb_value_boolean
+// duckdb_value_int8
+// duckdb_value_int16
+// duckdb_value_int32
+
+func ValueInt64(res *Result, col uint64, row uint64) int64 {
+	v := C.duckdb_value_int64(&res.data, C.idx_t(col), C.idx_t(row))
+	return int64(v)
+}
+
+// duckdb_value_hugeint
+// duckdb_value_uhugeint
+// duckdb_value_decimal
+// duckdb_value_uint8
+// duckdb_value_uint16
+// duckdb_value_uint32
+// duckdb_value_uint64
+// duckdb_value_float
+// duckdb_value_double
+// duckdb_value_date
+// duckdb_value_time
+// duckdb_value_timestamp
+// duckdb_value_interval
+// duckdb_value_varchar
+// duckdb_value_string
+// duckdb_value_varchar_internal
+// duckdb_value_string_internal
+// duckdb_value_blob
+// duckdb_value_is_null
+// duckdb_execute_prepared_streaming
+// duckdb_pending_prepared_streaming
+
+// ------------------------------------------------------------------ //
+// Arrow Interface
+// ------------------------------------------------------------------ //
+
+// duckdb_query_arrow
 
 func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
 	var arrowSchema C.duckdb_arrow_schema
@@ -1419,8 +1608,8 @@ func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
 	return State(state)
 }
 
-//#define duckdb_prepared_arrow_schema      duckdb_ext_api.duckdb_prepared_arrow_schema
-//#define duckdb_result_arrow_array         duckdb_ext_api.duckdb_result_arrow_array
+// duckdb_prepared_arrow_schema
+// duckdb_result_arrow_array
 
 func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
 	var arrowArray C.duckdb_arrow_array
@@ -1429,14 +1618,14 @@ func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
 	return State(state)
 }
 
-//#define duckdb_arrow_column_count         duckdb_ext_api.duckdb_arrow_column_count
+// duckdb_arrow_column_count
 
-func ArrowRowCount(arrow Arrow) IdxT {
+func ArrowRowCount(arrow Arrow) uint64 {
 	count := C.duckdb_arrow_row_count(arrow.data())
-	return IdxT(count)
+	return uint64(count)
 }
 
-//#define duckdb_arrow_rows_changed         duckdb_ext_api.duckdb_arrow_rows_changed
+// duckdb_arrow_rows_changed
 
 func QueryArrowError(arrow Arrow) string {
 	err := C.duckdb_query_arrow_error(arrow.data())
@@ -1449,8 +1638,8 @@ func DestroyArrow(arrow *Arrow) {
 	arrow.Ptr = nil
 }
 
-//#define duckdb_destroy_arrow              duckdb_ext_api.duckdb_destroy_arrow
-//#define duckdb_destroy_arrow_stream       duckdb_ext_api.duckdb_destroy_arrow_stream
+// duckdb_destroy_arrow
+// duckdb_destroy_arrow_stream
 
 func ExecutePreparedArrow(preparedStmt PreparedStatement, outArrow *Arrow) State {
 	var arrow C.duckdb_arrow
@@ -1467,23 +1656,21 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 	return State(state)
 }
 
-//#define duckdb_arrow_array_scan           duckdb_ext_api.duckdb_arrow_array_scan
-//#define duckdb_stream_fetch_chunk         duckdb_ext_api.duckdb_stream_fetch_chunk
-//
-//// Version unstable_instance_cache
-//#define duckdb_create_instance_cache    duckdb_ext_api.duckdb_create_instance_cache
-//#define duckdb_get_or_create_from_cache duckdb_ext_api.duckdb_get_or_create_from_cache
-//#define duckdb_destroy_instance_cache   duckdb_ext_api.duckdb_destroy_instance_cache
-//
-//// Version unstable_new_append_functions
-//#define duckdb_append_default_to_chunk duckdb_ext_api.duckdb_append_default_to_chunk
+// duckdb_arrow_array_scan
+// duckdb_stream_fetch_chunk
+
+// duckdb_create_instance_cache
+// duckdb_get_or_create_from_cache
+// duckdb_destroy_instance_cache
+
+// duckdb_append_default_to_chunk
 
 // ------------------------------------------------------------------ //
-// Helper
+// Go Bindings Helper
 // ------------------------------------------------------------------ //
 
-func MallocLogicalTypeSlice(count IdxT) (unsafe.Pointer, []LogicalType) {
-	// FIXME: unify code with other slice alloc functions.
+func MallocLogicalTypeSlice(count uint64) (unsafe.Pointer, []LogicalType) {
+	// FIXME: Unify code with other slice allocation functions.
 
 	var dummy C.duckdb_logical_type
 	size := C.size_t(unsafe.Sizeof(dummy))
