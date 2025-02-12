@@ -1,6 +1,8 @@
 split.artefacts:
 	mkdir ${DIRECTORY}/libs/core && \
 	mkdir ${DIRECTORY}/libs/corefunctions && \
+	mkdir ${DIRECTORY}/libs/parquet && \
+	mkdir ${DIRECTORY}/libs/icu && \
 	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/core/libduckdb.a && \
 	cd ${DIRECTORY}/libs/core && \
 	${AR} -x libduckdb.a && \
@@ -26,11 +28,81 @@ split.artefacts:
     mv ub_duckdb_core_functions_struct.cpp.${FILETYPE} ../corefunctions/ && \
     mv ub_duckdb_core_functions_union.cpp.${FILETYPE} ../corefunctions/ && \
     mv lambda_functions.cpp.${FILETYPE} ../corefunctions/ && \
+    mv column_reader.cpp.${FILETYPE} ../parquet/ && \
+    mv column_writer.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_crypto.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_extension.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_metadata.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_reader.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_statistics.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_timestamp.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_writer.cpp.${FILETYPE} ../parquet/ && \
+    mv serialize_parquet.cpp.${FILETYPE} ../parquet/ && \
+    mv zstd_file_system.cpp.${FILETYPE} ../parquet/ && \
+    mv geo_parquet.cpp.${FILETYPE} ../parquet/ && \
+    mv parquet_types.cpp.${FILETYPE} ../parquet/ && \
+    mv TProtocol.cpp.${FILETYPE} ../parquet/ && \
+    mv TTransportException.cpp.${FILETYPE} ../parquet/ && \
+    mv TBufferTransports.cpp.${FILETYPE} ../parquet/ && \
+    mv snappy.cc.o ../parquet/ && \
+    mv snappy-sinksource.cc.o ../parquet/ && \
+    mv lz4.cpp.${FILETYPE} ../parquet/ && \
+    mv dictionary_hash.cpp.${FILETYPE} ../parquet/ && \
+    mv backward_references_hq.cpp.${FILETYPE} ../parquet/ && \
+    mv histogram.cpp.${FILETYPE} ../parquet/ && \
+    mv memory.cpp.${FILETYPE} ../parquet/ && \
+    mv entropy_encode.cpp.${FILETYPE} ../parquet/ && \
+    mv compound_dictionary.cpp.${FILETYPE} ../parquet/ && \
+    mv compress_fragment_two_pass.cpp.${FILETYPE} ../parquet/ && \
+    mv block_splitter.cpp.${FILETYPE} ../parquet/ && \
+    mv command.cpp.${FILETYPE} ../parquet/ && \
+    mv encode.cpp.${FILETYPE} ../parquet/ && \
+    mv encoder_dict.cpp.${FILETYPE} ../parquet/ && \
+    mv cluster.cpp.${FILETYPE} ../parquet/ && \
+    mv backward_references.cpp.${FILETYPE} ../parquet/ && \
+    mv utf8_util.cpp.${FILETYPE} ../parquet/ && \
+    mv compress_fragment.cpp.${FILETYPE} ../parquet/ && \
+    mv fast_log.cpp.${FILETYPE} ../parquet/ && \
+    mv brotli_bit_stream.cpp.${FILETYPE} ../parquet/ && \
+    mv bit_cost.cpp.${FILETYPE} ../parquet/ && \
+    mv static_dict.cpp.${FILETYPE} ../parquet/ && \
+    mv literal_cost.cpp.${FILETYPE} ../parquet/ && \
+    mv metablock.cpp.${FILETYPE} ../parquet/ && \
+    mv dictionary.cpp.${FILETYPE} ../parquet/ && \
+    mv constants.cpp.${FILETYPE} ../parquet/ && \
+    mv transform.cpp.${FILETYPE} ../parquet/ && \
+    mv platform.cpp.${FILETYPE} ../parquet/ && \
+    mv shared_dictionary.cpp.${FILETYPE} ../parquet/ && \
+    mv context.cpp.${FILETYPE} ../parquet/ && \
+    mv state.cpp.${FILETYPE} ../parquet/ && \
+    mv decode.cpp.${FILETYPE} ../parquet/ && \
+    mv huffman.cpp.${FILETYPE} ../parquet/ && \
+    mv bit_reader.cpp.${FILETYPE} ../parquet/ && \
+    mv ub_duckdb_icu_common.cpp.${FILETYPE} ../icu/ && \
+    mv ub_duckdb_icu_i18n.cpp.${FILETYPE} ../icu/ && \
+    mv stubdata.cpp.${FILETYPE} ../icu/ && \
+    mv icu_extension.cpp.${FILETYPE} ../icu/ && \
+    mv icu-current.cpp.${FILETYPE} ../icu/ && \
+    mv icu-dateadd.cpp.${FILETYPE} ../icu/ && \
+    mv icu-datefunc.cpp.${FILETYPE} ../icu/ && \
+    mv icu-datepart.cpp.${FILETYPE} ../icu/ && \
+    mv icu-datesub.cpp.${FILETYPE} ../icu/ && \
+    mv icu-datetrunc.cpp.${FILETYPE} ../icu/ && \
+    mv icu-makedate.cpp.${FILETYPE} ../icu/ && \
+    mv icu-list-range.cpp.${FILETYPE} ../icu/ && \
+    mv icu-table-range.cpp.${FILETYPE} ../icu/ && \
+    mv icu-strptime.cpp.${FILETYPE} ../icu/ && \
+    mv icu-timebucket.cpp.${FILETYPE} ../icu/ && \
+    mv icu-timezone.cpp.${FILETYPE} ../icu/ && \
     cd .. && \
 	${AR} r libcore.a core/* && \
 	${AR} r libcorefunctions.a corefunctions/* && \
+	${AR} r libparquet.a parquet/* && \
+	${AR} r libicu.a icu/* && \
 	rm -rf core && \
-	rm -rf corefunctions
+	rm -rf corefunctions && \
+	rm -rf parquet && \
+	rm -rf icu
 
 fetch.static.lib:
 	cd ${DIRECTORY} && \
