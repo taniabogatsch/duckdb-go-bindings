@@ -11,11 +11,10 @@ jobs:
       - name: Replace bindings
         shell: bash
         run: |
-          ls
           rm -f darwin_amd64/bindings.go
           cp bindings.go darwin_amd64/bindings.go
           rm -f darwin_arm64/bindings.go
-          cp bindings.go darwin_arm6/bindings.go
+          cp bindings.go darwin_arm64/bindings.go
           rm -f linux_amd64/bindings.go
           cp bindings.go linux_amd64/bindings.go
           rm -f linux_arm64/bindings.go
