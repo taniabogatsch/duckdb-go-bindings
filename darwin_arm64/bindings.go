@@ -577,3 +577,1597 @@ type ArrowArray struct {
 func (array *ArrowArray) data() C.duckdb_arrow_array {
 	return C.duckdb_arrow_array(array.Ptr)
 }
+
+// ------------------------------------------------------------------ //
+// Functions
+// ------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------ //
+// Open Connect
+// ------------------------------------------------------------------ //
+
+// duckdb_open
+
+func OpenExt(path string, outDb *Database, config Config, errMsg *string) State {
+	cPath := C.CString(path)
+	defer Free(unsafe.Pointer(cPath))
+
+	var err *C.char
+	defer Free(unsafe.Pointer(err))
+
+	var db C.duckdb_database
+	state := C.duckdb_open_ext(cPath, &db, config.data(), &err)
+	outDb.Ptr = unsafe.Pointer(db)
+	*errMsg = C.GoString(err)
+	return State(state)
+}
+
+func Close(db *Database) {
+	data := db.data()
+	C.duckdb_close(&data)
+	db.Ptr = nil
+}
+
+func Connect(db Database, outConn *Connection) State {
+	var conn C.duckdb_connection
+	state := C.duckdb_connect(db.data(), &conn)
+	outConn.Ptr = unsafe.Pointer(conn)
+	return State(state)
+}
+
+func Interrupt(conn Connection) {
+	C.duckdb_interrupt(conn.data())
+}
+
+// duckdb_query_progress
+
+func Disconnect(conn *Connection) {
+	data := conn.data()
+	C.duckdb_disconnect(&data)
+	conn.Ptr = nil
+}
+
+// duckdb_library_version
+
+// ------------------------------------------------------------------ //
+// Configuration
+// ------------------------------------------------------------------ //
+
+func CreateConfig(outConfig *Config) State {
+	var config C.duckdb_config
+	state := C.duckdb_create_config(&config)
+	outConfig.Ptr = unsafe.Pointer(config)
+	return State(state)
+}
+
+// duckdb_config_count
+// duckdb_get_config_flag
+
+func SetConfig(config Config, name string, option string) State {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	cOption := C.CString(option)
+	defer Free(unsafe.Pointer(cOption))
+
+	state := C.duckdb_set_config(config.data(), cName, cOption)
+	return State(state)
+}
+
+func DestroyConfig(config *Config) {
+	data := config.data()
+	C.duckdb_destroy_config(&data)
+	config.Ptr = nil
+}
+
+// ------------------------------------------------------------------ //
+// Query Execution
+// ------------------------------------------------------------------ //
+
+// duckdb_query
+
+func DestroyResult(res *Result) {
+	C.duckdb_destroy_result(&res.data)
+	res = nil
+}
+
+func ColumnName(res *Result, col uint64) string {
+	name := C.duckdb_column_name(&res.data, C.idx_t(col))
+	return C.GoString(name)
+}
+
+func ColumnType(res *Result, col uint64) Type {
+	t := C.duckdb_column_type(&res.data, C.idx_t(col))
+	return Type(t)
+}
+
+// duckdb_result_statement_type
+
+func ColumnLogicalType(res *Result, col uint64) LogicalType {
+	logicalType := C.duckdb_column_logical_type(&res.data, C.idx_t(col))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func ColumnCount(res *Result) uint64 {
+	count := C.duckdb_column_count(&res.data)
+	return uint64(count)
+}
+
+// duckdb_rows_changed
+
+func ResultError(res *Result) string {
+	err := C.duckdb_result_error(&res.data)
+	return C.GoString(err)
+}
+
+// duckdb_result_error_type
+
+// ------------------------------------------------------------------ //
+// Result Functions (many are deprecated)
+// ------------------------------------------------------------------ //
+
+// duckdb_result_return_type
+
+// ------------------------------------------------------------------ //
+// Safe Fetch Functions (all deprecated)
+// ------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------ //
+// Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_malloc
+
+func Free(ptr unsafe.Pointer) {
+	C.duckdb_free(ptr)
+}
+
+func VectorSize() uint64 {
+	size := C.duckdb_vector_size()
+	return uint64(size)
+}
+
+func StringIsInlined(strT StringT) bool {
+	isInlined := C.duckdb_string_is_inlined(C.duckdb_string_t(strT))
+	return bool(isInlined)
+}
+
+func StringTLength(strT StringT) uint32 {
+	length := C.duckdb_string_t_length(C.duckdb_string_t(strT))
+	return uint32(length)
+}
+
+func StringTData(strT *StringT) string {
+	cStr := C.duckdb_string_t(*strT)
+	length := StringTLength(*strT)
+	if StringIsInlined(*strT) {
+		return string(C.GoBytes(unsafe.Pointer(C.duckdb_string_t_data(&cStr)), C.int(length)))
+	}
+	return string(C.GoBytes(unsafe.Pointer(C.duckdb_string_t_data(&cStr)), C.int(length)))
+}
+
+// ------------------------------------------------------------------ //
+// Date Time Timestamp Helpers
+// ------------------------------------------------------------------ //
+
+func FromDate(date Date) DateStruct {
+	dateStruct := C.duckdb_from_date(C.duckdb_date(date))
+	return DateStruct(dateStruct)
+}
+
+// duckdb_to_date
+// duckdb_is_finite_date
+// duckdb_from_time
+
+func CreateTimeTZ(micros int64, offset int32) TimeTZ {
+	timeTZ := C.duckdb_create_time_tz(C.int64_t(micros), C.int32_t(offset))
+	return TimeTZ(timeTZ)
+}
+
+func FromTimeTZ(ti TimeTZ) TimeTZStruct {
+	timeTZStruct := C.duckdb_from_time_tz(C.duckdb_time_tz(ti))
+	return TimeTZStruct(timeTZStruct)
+}
+
+// duckdb_to_time
+// duckdb_from_timestamp
+// duckdb_to_timestamp
+// duckdb_is_finite_timestamp
+// duckdb_is_finite_timestamp_s
+// duckdb_is_finite_timestamp_ms
+// duckdb_is_finite_timestamp_ns
+
+// ------------------------------------------------------------------ //
+// Hugeint Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_hugeint_to_double
+// duckdb_double_to_hugeint
+
+// ------------------------------------------------------------------ //
+// Unsigned Hugeint Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_uhugeint_to_double
+// duckdb_double_to_uhugeint
+
+// ------------------------------------------------------------------ //
+// Decimal Helpers
+// ------------------------------------------------------------------ //
+
+// duckdb_double_to_decimal
+// duckdb_decimal_to_double
+
+// ------------------------------------------------------------------ //
+// Prepared Statements
+// ------------------------------------------------------------------ //
+
+// duckdb_prepare
+
+func DestroyPrepare(preparedStmt *PreparedStatement) {
+	data := preparedStmt.data()
+	C.duckdb_destroy_prepare(&data)
+	preparedStmt.Ptr = nil
+}
+
+func PrepareError(preparedStmt PreparedStatement) string {
+	err := C.duckdb_prepare_error(preparedStmt.data())
+	return C.GoString(err)
+}
+
+func NParams(preparedStmt PreparedStatement) uint64 {
+	count := C.duckdb_nparams(preparedStmt.data())
+	return uint64(count)
+}
+
+func ParameterName(preparedStmt PreparedStatement, index uint64) string {
+	cName := C.duckdb_parameter_name(preparedStmt.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(cName))
+	return C.GoString(cName)
+}
+
+func ParamType(preparedStmt PreparedStatement, index uint64) Type {
+	t := C.duckdb_param_type(preparedStmt.data(), C.idx_t(index))
+	return Type(t)
+}
+
+// duckdb_param_logical_type
+// duckdb_clear_bindings
+
+func PreparedStatementType(preparedStmt PreparedStatement) StatementType {
+	t := C.duckdb_prepared_statement_type(preparedStmt.data())
+	return StatementType(t)
+}
+
+// ------------------------------------------------------------------ //
+// Bind Values To Prepared Statements
+// ------------------------------------------------------------------ //
+
+func BindValue(preparedStmt PreparedStatement, index uint64, v Value) State {
+	state := C.duckdb_bind_value(preparedStmt.data(), C.idx_t(index), v.data())
+	return State(state)
+}
+
+// duckdb_bind_parameter_index
+
+func BindBoolean(preparedStmt PreparedStatement, index uint64, v bool) State {
+	state := C.duckdb_bind_boolean(preparedStmt.data(), C.idx_t(index), C.bool(v))
+	return State(state)
+}
+
+func BindInt8(preparedStmt PreparedStatement, index uint64, v int8) State {
+	state := C.duckdb_bind_int8(preparedStmt.data(), C.idx_t(index), C.int8_t(v))
+	return State(state)
+}
+
+func BindInt16(preparedStmt PreparedStatement, index uint64, v int16) State {
+	state := C.duckdb_bind_int16(preparedStmt.data(), C.idx_t(index), C.int16_t(v))
+	return State(state)
+}
+
+func BindInt32(preparedStmt PreparedStatement, index uint64, v int32) State {
+	state := C.duckdb_bind_int32(preparedStmt.data(), C.idx_t(index), C.int32_t(v))
+	return State(state)
+}
+
+func BindInt64(preparedStmt PreparedStatement, index uint64, v int64) State {
+	state := C.duckdb_bind_int64(preparedStmt.data(), C.idx_t(index), C.int64_t(v))
+	return State(state)
+}
+
+func BindHugeInt(preparedStmt PreparedStatement, index uint64, v HugeInt) State {
+	state := C.duckdb_bind_hugeint(preparedStmt.data(), C.idx_t(index), C.duckdb_hugeint(v))
+	return State(state)
+}
+
+// duckdb_bind_uhugeint
+
+func BindDecimal(preparedStmt PreparedStatement, index uint64, v Decimal) State {
+	state := C.duckdb_bind_decimal(preparedStmt.data(), C.idx_t(index), C.duckdb_decimal(v))
+	return State(state)
+}
+
+func BindUInt8(preparedStmt PreparedStatement, index uint64, v uint8) State {
+	state := C.duckdb_bind_uint8(preparedStmt.data(), C.idx_t(index), C.uint8_t(v))
+	return State(state)
+}
+
+func BindUInt16(preparedStmt PreparedStatement, index uint64, v uint16) State {
+	state := C.duckdb_bind_uint16(preparedStmt.data(), C.idx_t(index), C.uint16_t(v))
+	return State(state)
+}
+
+func BindUInt32(preparedStmt PreparedStatement, index uint64, v uint32) State {
+	state := C.duckdb_bind_uint32(preparedStmt.data(), C.idx_t(index), C.uint32_t(v))
+	return State(state)
+}
+
+func BindUInt64(preparedStmt PreparedStatement, index uint64, v uint64) State {
+	state := C.duckdb_bind_uint64(preparedStmt.data(), C.idx_t(index), C.uint64_t(v))
+	return State(state)
+}
+
+func BindFloat(preparedStmt PreparedStatement, index uint64, v float32) State {
+	state := C.duckdb_bind_float(preparedStmt.data(), C.idx_t(index), C.float(v))
+	return State(state)
+}
+
+func BindDouble(preparedStmt PreparedStatement, index uint64, v float64) State {
+	state := C.duckdb_bind_double(preparedStmt.data(), C.idx_t(index), C.double(v))
+	return State(state)
+}
+
+func BindDate(preparedStmt PreparedStatement, index uint64, v Date) State {
+	state := C.duckdb_bind_date(preparedStmt.data(), C.idx_t(index), C.duckdb_date(v))
+	return State(state)
+}
+
+func BindTime(preparedStmt PreparedStatement, index uint64, v Time) State {
+	state := C.duckdb_bind_time(preparedStmt.data(), C.idx_t(index), C.duckdb_time(v))
+	return State(state)
+}
+
+func BindTimestamp(preparedStmt PreparedStatement, index uint64, v Timestamp) State {
+	state := C.duckdb_bind_timestamp(preparedStmt.data(), C.idx_t(index), C.duckdb_timestamp(v))
+	return State(state)
+}
+
+// duckdb_bind_timestamp_tz
+
+func BindInterval(preparedStmt PreparedStatement, index uint64, v Interval) State {
+	state := C.duckdb_bind_interval(preparedStmt.data(), C.idx_t(index), C.duckdb_interval(v))
+	return State(state)
+}
+
+func BindVarchar(preparedStmt PreparedStatement, index uint64, v string) State {
+	cStr := C.CString(v)
+	defer Free(unsafe.Pointer(cStr))
+
+	state := C.duckdb_bind_varchar(preparedStmt.data(), C.idx_t(index), cStr)
+	return State(state)
+}
+
+// duckdb_bind_varchar_length
+
+func BindBlob(preparedStmt PreparedStatement, index uint64, v []byte) State {
+	cBytes := C.CBytes(v)
+	defer Free(unsafe.Pointer(cBytes))
+
+	state := C.duckdb_bind_blob(preparedStmt.data(), C.idx_t(index), cBytes, C.idx_t(len(v)))
+	return State(state)
+}
+
+func BindNull(preparedStmt PreparedStatement, index uint64) State {
+	state := C.duckdb_bind_null(preparedStmt.data(), C.idx_t(index))
+	return State(state)
+}
+
+// ------------------------------------------------------------------ //
+// Execute Prepared Statements (many are deprecated)
+// ------------------------------------------------------------------ //
+
+// duckdb_execute_prepared
+
+// ------------------------------------------------------------------ //
+// Extract Statements
+// ------------------------------------------------------------------ //
+
+func ExtractStatements(conn Connection, query string, outExtractedStmts *ExtractedStatements) uint64 {
+	cQuery := C.CString(query)
+	defer Free(unsafe.Pointer(cQuery))
+
+	var extractedStmts C.duckdb_extracted_statements
+	count := C.duckdb_extract_statements(conn.data(), cQuery, &extractedStmts)
+	outExtractedStmts.Ptr = unsafe.Pointer(extractedStmts)
+	return uint64(count)
+}
+
+func PrepareExtractedStatement(conn Connection, extractedStmts ExtractedStatements, index uint64, outPreparedStmt *PreparedStatement) State {
+	var preparedStmt C.duckdb_prepared_statement
+	state := C.duckdb_prepare_extracted_statement(conn.data(), extractedStmts.data(), C.idx_t(index), &preparedStmt)
+	outPreparedStmt.Ptr = unsafe.Pointer(preparedStmt)
+	return State(state)
+}
+
+func ExtractStatementsError(extractedStmts ExtractedStatements) string {
+	err := C.duckdb_extract_statements_error(extractedStmts.data())
+	return C.GoString(err)
+}
+
+func DestroyExtracted(extractedStmts *ExtractedStatements) {
+	data := extractedStmts.data()
+	C.duckdb_destroy_extracted(&data)
+	extractedStmts.Ptr = nil
+}
+
+// ------------------------------------------------------------------ //
+// Pending Result Interface
+// ------------------------------------------------------------------ //
+
+func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResult) State {
+	var pendingRes C.duckdb_pending_result
+	state := C.duckdb_pending_prepared(preparedStmt.data(), &pendingRes)
+	outPendingRes.Ptr = unsafe.Pointer(pendingRes)
+	return State(state)
+}
+
+func DestroyPending(pendingRes *PendingResult) {
+	data := pendingRes.data()
+	C.duckdb_destroy_pending(&data)
+	pendingRes.Ptr = nil
+}
+
+func PendingError(pendingRes PendingResult) string {
+	err := C.duckdb_pending_error(pendingRes.data())
+	return C.GoString(err)
+}
+
+// duckdb_pending_execute_task
+// duckdb_pending_execute_check_state
+
+func ExecutePending(res PendingResult, outRes *Result) State {
+	state := C.duckdb_execute_pending(res.data(), &outRes.data)
+	return State(state)
+}
+
+// duckdb_pending_execution_is_finished
+
+// ------------------------------------------------------------------ //
+// Value Interface
+// ------------------------------------------------------------------ //
+
+func DestroyValue(v *Value) {
+	data := v.data()
+	C.duckdb_destroy_value(&data)
+	v.Ptr = nil
+}
+
+func CreateVarchar(str string) Value {
+	cStr := C.CString(str)
+	defer Free(unsafe.Pointer(cStr))
+	v := C.duckdb_create_varchar(cStr)
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// duckdb_create_varchar_length
+// duckdb_create_bool
+// duckdb_create_int8
+// duckdb_create_uint8
+// duckdb_create_int16
+// duckdb_create_uint16
+// duckdb_create_int32
+// duckdb_create_uint32
+// duckdb_create_uint64
+
+func CreateInt64(val int64) Value {
+	v := C.duckdb_create_int64(C.int64_t(val))
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// duckdb_create_hugeint
+// duckdb_create_uhugeint
+// duckdb_create_varint
+// duckdb_create_decimal
+// duckdb_create_float
+// duckdb_create_double
+// duckdb_create_date
+// duckdb_create_time
+
+func CreateTimeTZValue(timeTZ TimeTZ) Value {
+	v := C.duckdb_create_time_tz_value(C.duckdb_time_tz(timeTZ))
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// duckdb_create_timestamp
+// duckdb_create_timestamp_tz
+// duckdb_create_timestamp_s
+// duckdb_create_timestamp_ms
+// duckdb_create_timestamp_ns
+// duckdb_create_interval
+// duckdb_create_blob
+// duckdb_create_bit
+// duckdb_create_uuid
+
+func GetBool(v Value) bool {
+	val := C.duckdb_get_bool(v.data())
+	return bool(val)
+}
+
+func GetInt8(v Value) int8 {
+	val := C.duckdb_get_int8(v.data())
+	return int8(val)
+}
+
+func GetUInt8(v Value) uint8 {
+	val := C.duckdb_get_uint8(v.data())
+	return uint8(val)
+}
+
+func GetInt16(v Value) int16 {
+	val := C.duckdb_get_int16(v.data())
+	return int16(val)
+}
+
+func GetUInt16(v Value) uint16 {
+	val := C.duckdb_get_uint16(v.data())
+	return uint16(val)
+}
+
+func GetInt32(v Value) int32 {
+	val := C.duckdb_get_int32(v.data())
+	return int32(val)
+}
+
+func GetUInt32(v Value) uint32 {
+	val := C.duckdb_get_uint32(v.data())
+	return uint32(val)
+}
+
+func GetInt64(v Value) int64 {
+	val := C.duckdb_get_int64(v.data())
+	return int64(val)
+}
+
+func GetUInt64(v Value) uint64 {
+	val := C.duckdb_get_uint64(v.data())
+	return uint64(val)
+}
+
+func GetHugeInt(v Value) HugeInt {
+	val := C.duckdb_get_hugeint(v.data())
+	return HugeInt(val)
+}
+
+// duckdb_get_uhugeint
+// duckdb_get_varint
+// duckdb_get_decimal
+
+func GetFloat(v Value) float32 {
+	val := C.duckdb_get_float(v.data())
+	return float32(val)
+}
+
+func GetDouble(v Value) float64 {
+	val := C.duckdb_get_double(v.data())
+	return float64(val)
+}
+
+func GetDate(v Value) Date {
+	val := C.duckdb_get_date(v.data())
+	return Date(val)
+}
+
+func GetTime(v Value) Time {
+	val := C.duckdb_get_time(v.data())
+	return Time(val)
+}
+
+func GetTimeTZ(v Value) TimeTZ {
+	val := C.duckdb_get_time_tz(v.data())
+	return TimeTZ(val)
+}
+
+func GetTimestamp(v Value) Timestamp {
+	val := C.duckdb_get_timestamp(v.data())
+	return Timestamp(val)
+}
+
+// duckdb_get_timestamp_tz
+// duckdb_get_timestamp_s
+// duckdb_get_timestamp_ms
+// duckdb_get_timestamp_ns
+
+func GetInterval(v Value) Interval {
+	val := C.duckdb_get_interval(v.data())
+	return Interval(val)
+}
+
+// duckdb_get_value_type
+// duckdb_get_blob
+// duckdb_get_bit
+// duckdb_get_uuid
+
+func GetVarchar(v Value) string {
+	cStr := C.duckdb_get_varchar(v.data())
+	defer Free(unsafe.Pointer(cStr))
+	return C.GoString(cStr)
+}
+
+// duckdb_create_struct_value
+// duckdb_create_list_value
+// duckdb_create_array_value
+
+func GetMapSize(v Value) uint64 {
+	size := C.duckdb_get_map_size(v.data())
+	return uint64(size)
+}
+
+func GetMapKey(v Value, index uint64) Value {
+	value := C.duckdb_get_map_key(v.data(), C.idx_t(index))
+	return Value{
+		Ptr: unsafe.Pointer(value),
+	}
+}
+
+func GetMapValue(v Value, index uint64) Value {
+	value := C.duckdb_get_map_value(v.data(), C.idx_t(index))
+	return Value{
+		Ptr: unsafe.Pointer(value),
+	}
+}
+
+// duckdb_is_null_value
+// duckdb_create_null_value
+// duckdb_get_list_size
+// duckdb_get_list_child
+// duckdb_create_enum_value
+// duckdb_get_enum_value
+// duckdb_get_struct_child
+
+// ------------------------------------------------------------------ //
+// Logical Type Interface
+// ------------------------------------------------------------------ //
+
+func CreateLogicalType(t Type) LogicalType {
+	logicalType := C.duckdb_create_logical_type(C.duckdb_type(t))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func LogicalTypeGetAlias(logicalType LogicalType) string {
+	alias := C.duckdb_logical_type_get_alias(logicalType.data())
+	defer Free(unsafe.Pointer(alias))
+	return C.GoString(alias)
+}
+
+// duckdb_logical_type_set_alias
+
+func CreateListType(child LogicalType) LogicalType {
+	logicalType := C.duckdb_create_list_type(child.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateArrayType(child LogicalType, size uint64) LogicalType {
+	logicalType := C.duckdb_create_array_type(child.data(), C.idx_t(size))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateMapType(key LogicalType, value LogicalType) LogicalType {
+	logicalType := C.duckdb_create_map_type(key.data(), value.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+// duckdb_create_union_type
+
+func CreateStructType(types []LogicalType, names []string) LogicalType {
+	count := len(types)
+
+	typesSlice := allocLogicalTypeSlice(types)
+	defer Free(typesSlice)
+	typesPtr := (*C.duckdb_logical_type)(typesSlice)
+
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	defer Free(unsafe.Pointer(namesSlice))
+
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+
+	// Create the STRUCT type.
+	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, C.idx_t(count))
+
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateEnumType(names []string) LogicalType {
+	count := len(names)
+
+	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	defer Free(unsafe.Pointer(namesSlice))
+
+	for i, name := range names {
+		(*namesSlice)[i] = C.CString(name)
+	}
+	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+
+	// Create the ENUM type.
+	logicalType := C.duckdb_create_enum_type(namesPtr, C.idx_t(count))
+
+	for i := 0; i < count; i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func CreateDecimalType(width uint8, scale uint8) LogicalType {
+	logicalType := C.duckdb_create_decimal_type(C.uint8_t(width), C.uint8_t(scale))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func GetTypeId(logicalType LogicalType) Type {
+	t := C.duckdb_get_type_id(logicalType.data())
+	return Type(t)
+}
+
+func DecimalWidth(logicalType LogicalType) uint8 {
+	width := C.duckdb_decimal_width(logicalType.data())
+	return uint8(width)
+}
+
+func DecimalScale(logicalType LogicalType) uint8 {
+	scale := C.duckdb_decimal_scale(logicalType.data())
+	return uint8(scale)
+}
+
+func DecimalInternalType(logicalType LogicalType) Type {
+	t := C.duckdb_decimal_internal_type(logicalType.data())
+	return Type(t)
+}
+
+func EnumInternalType(logicalType LogicalType) Type {
+	t := C.duckdb_enum_internal_type(logicalType.data())
+	return Type(t)
+}
+
+func EnumDictionarySize(logicalType LogicalType) uint32 {
+	size := C.duckdb_enum_dictionary_size(logicalType.data())
+	return uint32(size)
+}
+
+func EnumDictionaryValue(logicalType LogicalType, index uint64) string {
+	str := C.duckdb_enum_dictionary_value(logicalType.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(str))
+	return C.GoString(str)
+}
+
+func ListTypeChildType(logicalType LogicalType) LogicalType {
+	child := C.duckdb_list_type_child_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayTypeChildType(logicalType LogicalType) LogicalType {
+	child := C.duckdb_array_type_child_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayTypeArraySize(logicalType LogicalType) uint64 {
+	size := C.duckdb_array_type_array_size(logicalType.data())
+	return uint64(size)
+}
+
+func MapTypeKeyType(logicalType LogicalType) LogicalType {
+	key := C.duckdb_map_type_key_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(key),
+	}
+}
+
+func MapTypeValueType(logicalType LogicalType) LogicalType {
+	value := C.duckdb_map_type_value_type(logicalType.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(value),
+	}
+}
+
+func StructTypeChildCount(logicalType LogicalType) uint64 {
+	count := C.duckdb_struct_type_child_count(logicalType.data())
+	return uint64(count)
+}
+
+func StructTypeChildName(logicalType LogicalType, index uint64) string {
+	cName := C.duckdb_struct_type_child_name(logicalType.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(cName))
+	return C.GoString(cName)
+}
+
+func StructTypeChildType(logicalType LogicalType, index uint64) LogicalType {
+	child := C.duckdb_struct_type_child_type(logicalType.data(), C.idx_t(index))
+	return LogicalType{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+// duckdb_union_type_member_count
+// duckdb_union_type_member_name
+// duckdb_union_type_member_type
+
+func DestroyLogicalType(logicalType *LogicalType) {
+	data := logicalType.data()
+	C.duckdb_destroy_logical_type(&data)
+	logicalType.Ptr = nil
+}
+
+// duckdb_register_logical_type
+
+// ------------------------------------------------------------------ //
+// Data Chunk Interface
+// ------------------------------------------------------------------ //
+
+func CreateDataChunk(types []LogicalType) DataChunk {
+	count := len(types)
+
+	typesSlice := allocLogicalTypeSlice(types)
+	typesPtr := (*C.duckdb_logical_type)(typesSlice)
+	defer Free(unsafe.Pointer(typesPtr))
+
+	chunk := C.duckdb_create_data_chunk(typesPtr, C.idx_t(count))
+	return DataChunk{
+		Ptr: unsafe.Pointer(chunk),
+	}
+}
+
+func DestroyDataChunk(chunk *DataChunk) {
+	data := chunk.data()
+	C.duckdb_destroy_data_chunk(&data)
+	chunk.Ptr = nil
+}
+
+// duckdb_data_chunk_reset
+
+func DataChunkGetColumnCount(chunk DataChunk) uint64 {
+	count := C.duckdb_data_chunk_get_column_count(chunk.data())
+	return uint64(count)
+}
+
+func DataChunkGetVector(chunk DataChunk, index uint64) Vector {
+	vec := C.duckdb_data_chunk_get_vector(chunk.data(), C.idx_t(index))
+	return Vector{
+		Ptr: unsafe.Pointer(vec),
+	}
+}
+
+func DataChunkGetSize(chunk DataChunk) uint64 {
+	size := C.duckdb_data_chunk_get_size(chunk.data())
+	return uint64(size)
+}
+
+func DataChunkSetSize(chunk DataChunk, size uint64) {
+	C.duckdb_data_chunk_set_size(chunk.data(), C.idx_t(size))
+}
+
+// ------------------------------------------------------------------ //
+// Vector Interface
+// ------------------------------------------------------------------ //
+
+func VectorGetColumnType(vec Vector) LogicalType {
+	logicalType := C.duckdb_vector_get_column_type(vec.data())
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func VectorGetData(vec Vector) unsafe.Pointer {
+	ptr := C.duckdb_vector_get_data(vec.data())
+	return unsafe.Pointer(ptr)
+}
+
+func VectorGetValidity(vec Vector) unsafe.Pointer {
+	mask := C.duckdb_vector_get_validity(vec.data())
+	return unsafe.Pointer(mask)
+}
+
+func VectorEnsureValidityWritable(vec Vector) {
+	C.duckdb_vector_ensure_validity_writable(vec.data())
+}
+
+func VectorAssignStringElement(vec Vector, index uint64, str string) {
+	cStr := C.CString(str)
+	defer Free(unsafe.Pointer(cStr))
+	C.duckdb_vector_assign_string_element(vec.data(), C.idx_t(index), cStr)
+}
+
+func VectorAssignStringElementLen(vec Vector, index uint64, blob []byte, len uint64) {
+	cBytes := (*C.char)(C.CBytes(blob))
+	defer Free(unsafe.Pointer(cBytes))
+	C.duckdb_vector_assign_string_element_len(vec.data(), C.idx_t(index), cBytes, C.idx_t(len))
+}
+
+func ListVectorGetChild(vec Vector) Vector {
+	child := C.duckdb_list_vector_get_child(vec.data())
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ListVectorGetSize(vec Vector) uint64 {
+	size := C.duckdb_list_vector_get_size(vec.data())
+	return uint64(size)
+}
+
+func ListVectorSetSize(vec Vector, size uint64) State {
+	state := C.duckdb_list_vector_set_size(vec.data(), C.idx_t(size))
+	return State(state)
+}
+
+func ListVectorReserve(vec Vector, capacity uint64) State {
+	state := C.duckdb_list_vector_reserve(vec.data(), C.idx_t(capacity))
+	return State(state)
+}
+
+func StructVectorGetChild(vec Vector, index uint64) Vector {
+	child := C.duckdb_struct_vector_get_child(vec.data(), C.idx_t(index))
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+func ArrayVectorGetChild(vec Vector) Vector {
+	child := C.duckdb_array_vector_get_child(vec.data())
+	return Vector{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+// ------------------------------------------------------------------ //
+// Validity Mask Functions
+// ------------------------------------------------------------------ //
+
+// duckdb_validity_row_is_valid
+// duckdb_validity_set_row_validity
+
+func ValiditySetRowInvalid(maskPtr unsafe.Pointer, row uint64) {
+	mask := (*C.uint64_t)(unsafe.Pointer(maskPtr))
+	C.duckdb_validity_set_row_invalid(mask, C.idx_t(row))
+}
+
+// duckdb_validity_set_row_valid
+
+// ------------------------------------------------------------------ //
+// Scalar Functions
+// ------------------------------------------------------------------ //
+
+func CreateScalarFunction() ScalarFunction {
+	f := C.duckdb_create_scalar_function()
+	return ScalarFunction{
+		Ptr: unsafe.Pointer(f),
+	}
+}
+
+func DestroyScalarFunction(f *ScalarFunction) {
+	data := f.data()
+	C.duckdb_destroy_scalar_function(&data)
+	f.Ptr = nil
+}
+
+func ScalarFunctionSetName(f ScalarFunction, name string) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_scalar_function_set_name(f.data(), cName)
+}
+
+func ScalarFunctionSetVarargs(f ScalarFunction, logicalType LogicalType) {
+	C.duckdb_scalar_function_set_varargs(f.data(), logicalType.data())
+}
+
+func ScalarFunctionSetSpecialHandling(f ScalarFunction) {
+	C.duckdb_scalar_function_set_special_handling(f.data())
+}
+
+func ScalarFunctionSetVolatile(f ScalarFunction) {
+	C.duckdb_scalar_function_set_volatile(f.data())
+}
+
+func ScalarFunctionAddParameter(f ScalarFunction, logicalType LogicalType) {
+	C.duckdb_scalar_function_add_parameter(f.data(), logicalType.data())
+}
+
+func ScalarFunctionSetReturnType(f ScalarFunction, logicalType LogicalType) {
+	C.duckdb_scalar_function_set_return_type(f.data(), logicalType.data())
+}
+
+func ScalarFunctionSetExtraInfo(f ScalarFunction, extraInfoPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_scalar_function_set_extra_info(f.data(), extraInfoPtr, callback)
+}
+
+func ScalarFunctionSetFunction(f ScalarFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_scalar_function_t(callbackPtr)
+	C.duckdb_scalar_function_set_function(f.data(), callback)
+}
+
+func RegisterScalarFunction(conn Connection, f ScalarFunction) State {
+	state := C.duckdb_register_scalar_function(conn.data(), f.data())
+	return State(state)
+}
+
+func ScalarFunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_scalar_function_get_extra_info(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func ScalarFunctionSetError(info FunctionInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_scalar_function_set_error(info.data(), cErr)
+}
+
+func CreateScalarFunctionSet(name string) ScalarFunctionSet {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	set := C.duckdb_create_scalar_function_set(cName)
+	return ScalarFunctionSet{
+		Ptr: unsafe.Pointer(set),
+	}
+}
+
+func DestroyScalarFunctionSet(set *ScalarFunctionSet) {
+	data := set.data()
+	C.duckdb_destroy_scalar_function_set(&data)
+	set.Ptr = nil
+}
+
+func AddScalarFunctionToSet(set ScalarFunctionSet, f ScalarFunction) State {
+	state := C.duckdb_add_scalar_function_to_set(set.data(), f.data())
+	return State(state)
+}
+
+func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
+	state := C.duckdb_register_scalar_function_set(conn.data(), f.data())
+	return State(state)
+}
+
+// ------------------------------------------------------------------ //
+// Aggregate Functions
+// ------------------------------------------------------------------ //
+
+// duckdb_create_aggregate_function
+// duckdb_destroy_aggregate_function
+// duckdb_aggregate_function_set_name
+// duckdb_aggregate_function_add_parameter
+// duckdb_aggregate_function_set_return_type
+// duckdb_aggregate_function_set_functions
+// duckdb_aggregate_function_set_destructor
+// duckdb_register_aggregate_function
+// duckdb_aggregate_function_set_special_handling
+// duckdb_aggregate_function_set_extra_info
+// duckdb_aggregate_function_get_extra_info
+// duckdb_aggregate_function_set_error
+// duckdb_create_aggregate_function_set
+// duckdb_destroy_aggregate_function_set
+// duckdb_add_aggregate_function_to_set
+// duckdb_register_aggregate_function_set
+
+// ------------------------------------------------------------------ //
+// Table Functions
+// ------------------------------------------------------------------ //
+
+func CreateTableFunction() TableFunction {
+	f := C.duckdb_create_table_function()
+	return TableFunction{
+		Ptr: unsafe.Pointer(f),
+	}
+}
+
+func DestroyTableFunction(f *TableFunction) {
+	data := f.data()
+	C.duckdb_destroy_table_function(&data)
+	f.Ptr = nil
+}
+
+func TableFunctionSetName(f TableFunction, name string) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_table_function_set_name(f.data(), cName)
+}
+
+func TableFunctionAddParameter(f TableFunction, logicalType LogicalType) {
+	C.duckdb_table_function_add_parameter(f.data(), logicalType.data())
+}
+
+func TableFunctionAddNamedParameter(f TableFunction, name string, logicalType LogicalType) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_table_function_add_named_parameter(f.data(), cName, logicalType.data())
+}
+
+func TableFunctionSetExtraInfo(f TableFunction, extraInfoPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_table_function_set_extra_info(f.data(), extraInfoPtr, callback)
+}
+
+func TableFunctionSetBind(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_bind_t(callbackPtr)
+	C.duckdb_table_function_set_bind(f.data(), callback)
+}
+
+func TableFunctionSetInit(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_init_t(callbackPtr)
+	C.duckdb_table_function_set_init(f.data(), callback)
+}
+
+func TableFunctionSetLocalInit(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_init_t(callbackPtr)
+	C.duckdb_table_function_set_local_init(f.data(), callback)
+}
+
+func TableFunctionSetFunction(f TableFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_table_function_t(callbackPtr)
+	C.duckdb_table_function_set_function(f.data(), callback)
+}
+
+func TableFunctionSupportsProjectionPushdown(f TableFunction, pushdown bool) {
+	C.duckdb_table_function_supports_projection_pushdown(f.data(), C.bool(pushdown))
+}
+
+func RegisterTableFunction(conn Connection, f TableFunction) State {
+	state := C.duckdb_register_table_function(conn.data(), f.data())
+	return State(state)
+}
+
+// ------------------------------------------------------------------ //
+// Table Function Bind
+// ------------------------------------------------------------------ //
+
+func BindGetExtraInfo(info BindInfo) unsafe.Pointer {
+	ptr := C.duckdb_bind_get_extra_info(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func BindAddResultColumn(info BindInfo, name string, logicalType LogicalType) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	C.duckdb_bind_add_result_column(info.data(), cName, logicalType.data())
+}
+
+// duckdb_bind_get_parameter_count
+
+func BindGetParameter(info BindInfo, index uint64) Value {
+	v := C.duckdb_bind_get_parameter(info.data(), C.idx_t(index))
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func BindGetNamedParameter(info BindInfo, name string) Value {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+
+	v := C.duckdb_bind_get_named_parameter(info.data(), cName)
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func BindSetBindData(info BindInfo, bindDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_bind_set_bind_data(info.data(), bindDataPtr, callback)
+}
+
+func BindSetCardinality(info BindInfo, cardinality uint64, exact bool) {
+	C.duckdb_bind_set_cardinality(info.data(), C.idx_t(cardinality), C.bool(exact))
+}
+
+func BindSetError(info BindInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_bind_set_error(info.data(), cErr)
+}
+
+// ------------------------------------------------------------------ //
+// Table Function Init
+// ------------------------------------------------------------------ //
+
+// duckdb_init_get_extra_info
+
+func InitGetBindData(info InitInfo) unsafe.Pointer {
+	ptr := C.duckdb_init_get_bind_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func InitSetInitData(info InitInfo, initDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_init_set_init_data(info.data(), initDataPtr, callback)
+}
+
+func InitGetColumnCount(info InitInfo) uint64 {
+	count := C.duckdb_init_get_column_count(info.data())
+	return uint64(count)
+}
+
+func InitGetColumnIndex(info InitInfo, index uint64) uint64 {
+	colIndex := C.duckdb_init_get_column_index(info.data(), C.idx_t(index))
+	return uint64(colIndex)
+}
+
+func InitSetMaxThreads(info InitInfo, max uint64) {
+	C.duckdb_init_set_max_threads(info.data(), C.idx_t(max))
+}
+
+// duckdb_init_set_error
+
+// ------------------------------------------------------------------ //
+// Table Function
+// ------------------------------------------------------------------ //
+
+// duckdb_function_get_extra_info
+
+func FunctionGetBindData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_bind_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+// duckdb_function_get_init_data
+
+func FunctionGetLocalInitData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_local_init_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+func FunctionSetError(info FunctionInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_function_set_error(info.data(), cErr)
+}
+
+// ------------------------------------------------------------------ //
+// Replacement Scans
+// ------------------------------------------------------------------ //
+
+func AddReplacementScan(db Database, callbackPtr unsafe.Pointer, extraData unsafe.Pointer, deleteCallbackPtr unsafe.Pointer) {
+	callback := C.duckdb_replacement_callback_t(callbackPtr)
+	deleteCallback := C.duckdb_delete_callback_t(deleteCallbackPtr)
+	C.duckdb_add_replacement_scan(db.data(), callback, extraData, deleteCallback)
+}
+
+func ReplacementScanSetFunctionName(info ReplacementScanInfo, name string) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_replacement_scan_set_function_name(info.data(), cName)
+}
+
+func ReplacementScanAddParameter(info ReplacementScanInfo, v Value) {
+	C.duckdb_replacement_scan_add_parameter(info.data(), v.data())
+}
+
+func ReplacementScanSetError(info ReplacementScanInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_replacement_scan_set_error(info.data(), cErr)
+}
+
+// ------------------------------------------------------------------ //
+// Profiling Info
+// ------------------------------------------------------------------ //
+
+func GetProfilingInfo(conn Connection) ProfilingInfo {
+	info := C.duckdb_get_profiling_info(conn.data())
+	return ProfilingInfo{
+		Ptr: unsafe.Pointer(info),
+	}
+}
+
+// duckdb_profiling_info_get_value
+
+func ProfilingInfoGetMetrics(info ProfilingInfo) Value {
+	value := C.duckdb_profiling_info_get_metrics(info.data())
+	return Value{
+		Ptr: unsafe.Pointer(value),
+	}
+}
+
+func ProfilingInfoGetChildCount(info ProfilingInfo) uint64 {
+	count := C.duckdb_profiling_info_get_child_count(info.data())
+	return uint64(count)
+}
+
+func ProfilingInfoGetChild(info ProfilingInfo, index uint64) ProfilingInfo {
+	child := C.duckdb_profiling_info_get_child(info.data(), C.idx_t(index))
+	return ProfilingInfo{
+		Ptr: unsafe.Pointer(child),
+	}
+}
+
+// ------------------------------------------------------------------ //
+// Appender
+// ------------------------------------------------------------------ //
+
+func AppenderCreate(conn Connection, schema string, table string, outAppender *Appender) State {
+	cSchema := C.CString(schema)
+	defer Free(unsafe.Pointer(cSchema))
+
+	cTable := C.CString(table)
+	defer Free(unsafe.Pointer(cTable))
+
+	var appender C.duckdb_appender
+	state := C.duckdb_appender_create(conn.data(), cSchema, cTable, &appender)
+	outAppender.Ptr = unsafe.Pointer(appender)
+	return State(state)
+}
+
+// duckdb_appender_create_ext
+
+func AppenderColumnCount(appender Appender) uint64 {
+	count := C.duckdb_appender_column_count(appender.data())
+	return uint64(count)
+}
+
+func AppenderColumnType(appender Appender, index uint64) LogicalType {
+	logicalType := C.duckdb_appender_column_type(appender.data(), C.idx_t(index))
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func AppenderError(appender Appender) string {
+	err := C.duckdb_appender_error(appender.data())
+	return C.GoString(err)
+}
+
+func AppenderFlush(appender Appender) State {
+	state := C.duckdb_appender_flush(appender.data())
+	return State(state)
+}
+
+func AppenderClose(appender Appender) State {
+	state := C.duckdb_appender_close(appender.data())
+	return State(state)
+}
+
+func AppenderDestroy(appender *Appender) State {
+	data := appender.data()
+	state := C.duckdb_appender_destroy(&data)
+	appender.Ptr = nil
+	return State(state)
+}
+
+// duckdb_appender_add_column
+// duckdb_appender_clear_columns
+// duckdb_appender_begin_row
+// duckdb_appender_end_row
+// duckdb_append_default
+// duckdb_append_bool
+// duckdb_append_int8
+// duckdb_append_int16
+// duckdb_append_int32
+// duckdb_append_int64
+// duckdb_append_hugeint
+// duckdb_append_uint8
+// duckdb_append_uint16
+// duckdb_append_uint32
+// duckdb_append_uint64
+// duckdb_append_uhugeint
+// duckdb_append_float
+// duckdb_append_double
+// duckdb_append_date
+// duckdb_append_time
+// duckdb_append_timestamp
+// duckdb_append_interval
+// duckdb_append_varchar
+// duckdb_append_varchar_length
+// duckdb_append_blob
+// duckdb_append_null
+// duckdb_append_value
+
+func AppendDataChunk(appender Appender, chunk DataChunk) State {
+	state := C.duckdb_append_data_chunk(appender.data(), chunk.data())
+	return State(state)
+}
+
+// ------------------------------------------------------------------ //
+// Table Description
+// ------------------------------------------------------------------ //
+
+// duckdb_table_description_create
+// duckdb_table_description_create_ext
+// duckdb_table_description_destroy
+// duckdb_table_description_error
+// duckdb_column_has_default
+// duckdb_table_description_get_column_name
+// duckdb_execute_tasks
+// duckdb_create_task_state
+// duckdb_execute_tasks_state
+// duckdb_execute_n_tasks_state
+// duckdb_finish_execution
+// duckdb_task_state_is_finished
+// duckdb_destroy_task_state
+// duckdb_execution_is_finished
+// duckdb_fetch_chunk
+// duckdb_create_cast_function
+// duckdb_cast_function_set_source_type
+// duckdb_cast_function_set_target_type
+// duckdb_cast_function_set_implicit_cast_cost
+// duckdb_cast_function_set_function
+// duckdb_cast_function_set_extra_info
+// duckdb_cast_function_get_extra_info
+// duckdb_cast_function_get_cast_mode
+// duckdb_cast_function_set_error
+// duckdb_cast_function_set_row_error
+// duckdb_register_cast_function
+// duckdb_destroy_cast_function
+
+// duckdb_row_count
+// duckdb_column_data
+// duckdb_nullmask_data
+
+func ResultGetChunk(res Result, index uint64) DataChunk {
+	chunk := C.duckdb_result_get_chunk(res.data, C.idx_t(index))
+	return DataChunk{
+		Ptr: unsafe.Pointer(chunk),
+	}
+}
+
+// duckdb_result_is_streaming
+
+func ResultChunkCount(res Result) uint64 {
+	count := C.duckdb_result_chunk_count(res.data)
+	return uint64(count)
+}
+
+// duckdb_value_boolean
+// duckdb_value_int8
+// duckdb_value_int16
+// duckdb_value_int32
+
+func ValueInt64(res *Result, col uint64, row uint64) int64 {
+	v := C.duckdb_value_int64(&res.data, C.idx_t(col), C.idx_t(row))
+	return int64(v)
+}
+
+// duckdb_value_hugeint
+// duckdb_value_uhugeint
+// duckdb_value_decimal
+// duckdb_value_uint8
+// duckdb_value_uint16
+// duckdb_value_uint32
+// duckdb_value_uint64
+// duckdb_value_float
+// duckdb_value_double
+// duckdb_value_date
+// duckdb_value_time
+// duckdb_value_timestamp
+// duckdb_value_interval
+// duckdb_value_varchar
+// duckdb_value_string
+// duckdb_value_varchar_internal
+// duckdb_value_string_internal
+// duckdb_value_blob
+// duckdb_value_is_null
+// duckdb_execute_prepared_streaming
+// duckdb_pending_prepared_streaming
+
+// ------------------------------------------------------------------ //
+// Arrow Interface
+// ------------------------------------------------------------------ //
+
+// duckdb_query_arrow
+
+func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
+	state := C.duckdb_query_arrow_schema(arrow.data(), (*C.duckdb_arrow_schema)(outSchema.Ptr))
+	return State(state)
+}
+
+// duckdb_prepared_arrow_schema
+// duckdb_result_arrow_array
+
+func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
+	state := C.duckdb_query_arrow_array(arrow.data(), (*C.duckdb_arrow_array)(outArray.Ptr))
+	return State(state)
+}
+
+// duckdb_arrow_column_count
+
+func ArrowRowCount(arrow Arrow) uint64 {
+	count := C.duckdb_arrow_row_count(arrow.data())
+	return uint64(count)
+}
+
+// duckdb_arrow_rows_changed
+
+func QueryArrowError(arrow Arrow) string {
+	err := C.duckdb_query_arrow_error(arrow.data())
+	return C.GoString(err)
+}
+
+func DestroyArrow(arrow *Arrow) {
+	data := arrow.data()
+	C.duckdb_destroy_arrow(&data)
+	arrow.Ptr = nil
+}
+
+// duckdb_destroy_arrow
+// duckdb_destroy_arrow_stream
+
+func ExecutePreparedArrow(preparedStmt PreparedStatement, outArrow *Arrow) State {
+	var arrow C.duckdb_arrow
+	state := C.duckdb_execute_prepared_arrow(preparedStmt.data(), &arrow)
+	outArrow.Ptr = unsafe.Pointer(arrow)
+	return State(state)
+}
+
+func ArrowScan(conn Connection, table string, stream ArrowStream) State {
+	cTable := C.CString(table)
+	defer Free(unsafe.Pointer(cTable))
+
+	state := C.duckdb_arrow_scan(conn.data(), cTable, stream.data())
+	return State(state)
+}
+
+// duckdb_arrow_array_scan
+// duckdb_stream_fetch_chunk
+
+// duckdb_create_instance_cache
+// duckdb_get_or_create_from_cache
+// duckdb_destroy_instance_cache
+
+// duckdb_append_default_to_chunk
+
+// ------------------------------------------------------------------ //
+// Go Bindings Helper
+// ------------------------------------------------------------------ //
+
+func ValidityMaskValueIsValid(maskPtr unsafe.Pointer, index uint64) bool {
+	entryIdx := index / 64
+	idxInEntry := index % 64
+	slice := (*[1 << 31]C.uint64_t)(maskPtr)
+	isValid := slice[entryIdx] & (C.uint64_t(1) << idxInEntry)
+	return uint64(isValid) != 0
+}
+
+const (
+	logicalTypeSize = C.size_t(unsafe.Sizeof((C.duckdb_logical_type)(nil)))
+	charSize        = C.size_t(unsafe.Sizeof((*C.char)(nil)))
+)
+
+func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
+	count := len(types)
+
+	// Initialize the memory of the logical types.
+	typesSlice := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
+	for i, t := range types {
+		// We only copy the pointers.
+		// The actual types live in types.
+		(*typesSlice)[i] = t.data()
+	}
+	return unsafe.Pointer(typesSlice)
+}
