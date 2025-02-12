@@ -4,7 +4,6 @@ split.artefacts:
 	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/core/libduckdb.a && \
 	cd ${DIRECTORY}/libs/core && \
 	${AR} -x libduckdb.a && \
-	ls && \
 	rm -f __.SYMDEF && \
 	rm -f libduckdb.a && \
 	mv ub_duckdb_core_functions_algebraic.cpp.${FILETYPE} ../corefunctions/ && \
