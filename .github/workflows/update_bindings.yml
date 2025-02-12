@@ -1,4 +1,4 @@
-name: Update module bindings
+name: update module bindings
 on:
   workflow_dispatch:
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - name: Replace bindings
+      - name: replace bindings
         shell: bash
         run: |
           rm -f darwin_amd64/bindings.go
@@ -24,4 +24,4 @@ jobs:
       - name: Push updated bindings
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: Push updated bindings
+          commit_message: push updated bindings
