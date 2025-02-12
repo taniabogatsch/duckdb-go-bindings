@@ -1,0 +1,32 @@
+name: Tests
+on:
+  workflow_dispatch:
+
+jobs:
+  go-tests:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        include:
+          - os: "macos-13"
+            dir: "darwin_amd64"
+          - os: "macos-14"
+            dir: "darwin_arm64"
+          - os: "ubuntu-latest"
+            dir: "linux_amd64"
+          - os: "windows-latest"
+            dir: "windows_amd64"
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23
+      - name: Tests
+        run: |
+          cd ${{ matrix.dir }}
+          go test

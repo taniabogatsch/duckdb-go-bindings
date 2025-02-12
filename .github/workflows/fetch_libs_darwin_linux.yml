@@ -15,11 +15,11 @@ jobs:
       - name: fetch and split linux static libs
         run: |
           make fetch.static.lib DIRECTORY=linux_amd64 VERSION=v1.2.0 FILENAME=static-lib-linux-amd64
-          make split.artefacts DIRECTORY=linux_amd64
+          make split.artefacts DIRECTORY=linux_amd64 FILETYPE=.o
           make fetch.static.lib DIRECTORY=linux_arm64 VERSION=v1.2.0 FILENAME=static-lib-linux-arm64
-          make split.artefacts DIRECTORY=linux_arm64
+          make split.artefacts DIRECTORY=linux_arm64 FILETYPE=.o
         shell: bash
       - name: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: push v1.2.0 darwin and linux
+          commit_message: push darwin and linux libs
