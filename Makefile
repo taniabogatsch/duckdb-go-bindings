@@ -4,6 +4,7 @@ split.artefacts:
 	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/dir1/libduckdb.a && \
 	cd ${DIRECTORY}/libs/dir1 && \
 	${AR} -x libduckdb.a && \
+	ls && \
 	rm -f __.SYMDEF && \
 	rm -f libduckdb.a && \
 	cd ../../.. && \
