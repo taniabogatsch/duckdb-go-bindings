@@ -15,10 +15,6 @@ import (
 // Type wraps duckdb_type.
 type Type C.duckdb_type
 
-func (t *Type) data() C.duckdb_type {
-	return C.duckdb_type(*t)
-}
-
 const (
 	TypeInvalid     Type = C.DUCKDB_TYPE_INVALID
 	TypeBoolean     Type = C.DUCKDB_TYPE_BOOLEAN
@@ -184,8 +180,7 @@ const (
 
 // NOTE: No wrapping for C.idx_t.
 
-// *duckdb_delete_callback_t
-// *duckdb_task_state
+// Types without internal pointers:
 
 type (
 	Date              C.duckdb_date
@@ -203,23 +198,28 @@ type (
 	QueryProgressType C.duckdb_query_progress_type
 	StringT           C.duckdb_string_t
 	ListEntry         C.duckdb_list_entry
-	Column            C.duckdb_column
 )
+
+// duckdb_string
+// duckdb_blob
+// duckdb_extension_access
+
+// Helper functions for types without internal pointers:
 
 func DateSetDays(date *Date, days int32) {
 	date.days = C.int32_t(days)
 }
 
-func DateStructGetYear(dateStruct *DateStruct) int32 {
-	return int32(dateStruct.year)
+func DateStructGetYear(date *DateStruct) int32 {
+	return int32(date.year)
 }
 
-func DateStructGetMonth(dateStruct *DateStruct) int8 {
-	return int8(dateStruct.month)
+func DateStructGetMonth(date *DateStruct) int8 {
+	return int8(date.month)
 }
 
-func DateStructGetDay(dateStruct *DateStruct) int8 {
-	return int8(dateStruct.day)
+func DateStructGetDay(date *DateStruct) int8 {
+	return int8(date.day)
 }
 
 func TimeGetMicros(ti *Time) int64 {
@@ -262,28 +262,28 @@ func TimestampSetMicros(ts *Timestamp, micros int64) {
 	ts.micros = C.int64_t(micros)
 }
 
-func IntervalGetMonths(interval *Interval) int32 {
-	return int32(interval.months)
+func IntervalGetMonths(i *Interval) int32 {
+	return int32(i.months)
 }
 
-func IntervalSetMonths(interval *Interval, months int32) {
-	interval.months = C.int32_t(months)
+func IntervalSetMonths(i *Interval, months int32) {
+	i.months = C.int32_t(months)
 }
 
-func IntervalGetDays(interval *Interval) int32 {
-	return int32(interval.days)
+func IntervalGetDays(i *Interval) int32 {
+	return int32(i.days)
 }
 
-func IntervalSetDays(interval *Interval, days int32) {
-	interval.days = C.int32_t(days)
+func IntervalSetDays(i *Interval, days int32) {
+	i.days = C.int32_t(days)
 }
 
-func IntervalGetMicros(interval *Interval) int64 {
-	return int64(interval.micros)
+func IntervalGetMicros(i *Interval) int64 {
+	return int64(i.micros)
 }
 
-func IntervalSetMicros(interval *Interval, micros int64) {
-	interval.micros = C.int64_t(micros)
+func IntervalSetMicros(i *Interval, micros int64) {
+	i.micros = C.int64_t(micros)
 }
 
 func HugeIntGetLower(hugeInt *HugeInt) uint64 {
@@ -318,9 +318,39 @@ func ListEntrySetLength(entry *ListEntry, length uint64) {
 	entry.length = C.uint64_t(length)
 }
 
+// Types with internal pointers:
+
+// duckdb_column
+
+// Result wraps duckdb_result.
+type Result struct {
+	data C.duckdb_result
+}
+
 // ------------------------------------------------------------------ //
-// Pointers
+// Pointer Types
 // ------------------------------------------------------------------ //
+
+// NOTE: No wrappings for function pointers.
+// *duckdb_delete_callback_t
+// *duckdb_task_state
+// *duckdb_scalar_function_t
+// *duckdb_aggregate_state_size
+// *duckdb_aggregate_init_t
+// *duckdb_aggregate_destroy_t
+// *duckdb_aggregate_update_t
+// *duckdb_aggregate_combine_t
+// *duckdb_aggregate_finalize_t
+// *duckdb_table_function_bind_t
+// *duckdb_table_function_init_t
+// *duckdb_table_function_t
+// *duckdb_cast_function_t
+// *duckdb_replacement_callback_t
+
+// NOTE: We export the Ptr of each wrapped type pointer to allow (void *) typedef's of callback functions.
+// NOTE: See https://golang.org/issue/19837 and https://golang.org/issue/19835.
+
+// *duckdb_task_state
 
 // Vector wraps *duckdb_vector.
 type Vector struct {
@@ -329,14 +359,6 @@ type Vector struct {
 
 func (vec *Vector) data() C.duckdb_vector {
 	return C.duckdb_vector(vec.Ptr)
-}
-
-// duckdb_string
-// duckdb_blob
-
-// Result wraps duckdb_result.
-type Result struct {
-	data C.duckdb_result
 }
 
 // Database wraps *duckdb_database.
@@ -449,7 +471,7 @@ func (info *ProfilingInfo) data() C.duckdb_profiling_info {
 	return C.duckdb_profiling_info(info.Ptr)
 }
 
-// TODO: Do we need *duckdb_extension_info?
+// *duckdb_extension_info
 
 // FunctionInfo wraps *duckdb_function_info.
 type FunctionInfo struct {
@@ -478,18 +500,9 @@ func (set *ScalarFunctionSet) data() C.duckdb_scalar_function_set {
 	return C.duckdb_scalar_function_set(set.Ptr)
 }
 
-// *duckdb_scalar_function_t
-
 // *duckdb_aggregate_function
 // *duckdb_aggregate_function_set
 // *duckdb_aggregate_state
-
-// *duckdb_aggregate_state_size
-// *duckdb_aggregate_init_t
-// *duckdb_aggregate_destroy_t
-// *duckdb_aggregate_update_t
-// *duckdb_aggregate_combine_t
-// *duckdb_aggregate_finalize_t
 
 // TableFunction wraps *duckdb_table_function.
 type TableFunction struct {
@@ -518,13 +531,7 @@ func (info *InitInfo) data() C.duckdb_init_info {
 	return C.duckdb_init_info(info.Ptr)
 }
 
-// *duckdb_table_function_bind_t
-// *duckdb_table_function_init_t
-// *duckdb_table_function_t
-
 // *duckdb_cast_function
-
-// *duckdb_cast_function_t
 
 // ReplacementScanInfo wraps *duckdb_replacement_scan.
 type ReplacementScanInfo struct {
@@ -534,8 +541,6 @@ type ReplacementScanInfo struct {
 func (info *ReplacementScanInfo) data() C.duckdb_replacement_scan_info {
 	return C.duckdb_replacement_scan_info(info.Ptr)
 }
-
-// *duckdb_replacement_callback_t
 
 // Arrow wraps *duckdb_arrow.
 type Arrow struct {
@@ -572,8 +577,6 @@ type ArrowArray struct {
 func (array *ArrowArray) data() C.duckdb_arrow_array {
 	return C.duckdb_arrow_array(array.Ptr)
 }
-
-// TODO: What about duckdb_extension_access?
 
 // ------------------------------------------------------------------ //
 // Functions
@@ -665,6 +668,7 @@ func DestroyConfig(config *Config) {
 
 func DestroyResult(res *Result) {
 	C.duckdb_destroy_result(&res.data)
+	res = nil
 }
 
 func ColumnName(res *Result, col uint64) string {
@@ -1233,7 +1237,7 @@ func GetMapValue(v Value, index uint64) Value {
 // ------------------------------------------------------------------ //
 
 func CreateLogicalType(t Type) LogicalType {
-	logicalType := C.duckdb_create_logical_type(t.data())
+	logicalType := C.duckdb_create_logical_type(C.duckdb_type(t))
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
 	}
