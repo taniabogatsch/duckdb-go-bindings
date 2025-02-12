@@ -1,4 +1,4 @@
-name: fetch static libs
+name: fetch static libs for darwin and linux
 on:
   workflow_dispatch:
 jobs:
@@ -23,19 +23,3 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: push v1.2.0 darwin and linux
-  fetch-windows:
-    runs-on: windows-2019
-    needs: [fetch-darwin-linux]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - name: fetch and split windows static lib
-        run: |
-          make fetch.static.lib DIRECTORY=windows_amd64 VERSION=v1.2.0 FILENAME=static-lib-windows-mingw
-          make split.artefacts DIRECTORY=windows_amd64
-        shell: bash
-      - name: commit
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: push v1.2.0 windows
