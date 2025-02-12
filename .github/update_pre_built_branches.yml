@@ -1,0 +1,26 @@
+name: Update the pre-built branches
+on:
+  workflow_dispatch:
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - shell: bash
+        run: |
+          rm -f darwin_amd64/bindings.go
+          cp bindings.go darwin_amd64/bindings.go
+          rm -f darwin_arm64/bindings.go
+          cp bindings.go darwin_arm6/bindings.go
+          rm -f linux_amd64/bindings.go
+          cp bindings.go linux_amd64/bindings.go
+          rm -f linux_arm64/bindings.go
+          cp bindings.go linux_arm64/bindings.go
+          rm -f windows_amd64/bindings.go
+          cp bindings.go windows_amd64/bindings.go
+      - name: Push updated bindings
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Push updated bindings
