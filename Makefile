@@ -1,11 +1,24 @@
-#DUCKDB_VERSION=v1.2.0
-#DUCKDB_DOWNLOAD_PATH=https://github.com/duckdb/duckdb/releases/download/
-#
-##https://github.com/duckdb/duckdb/releases/download/v1.2.0/static-lib-osx-arm64.zip
-
-split.linux.amd64.artefacts:
-	cd linux_amd64/libs && \
+split.artefacts:
+	mkdir ${DIRECTORY}/libs/dir1 && \
+	mkdir ${DIRECTORY}/libs/dir2 && \
+	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/dir1/libduckdb.a && \
+	cd ${DIRECTORY}/libs/dir1 && \
 	${AR} -x libduckdb.a && \
-	ls && \
-	mkdir dir1 && \
-	mkdir dir2
+	rm libduckdb.a && \
+	cd ../../.. && \
+	python3 scripts/move_files.py -src ${DIRECTORY}/libs/dir1/ -dst ${DIRECTORY}/libs/dir2/ && \
+	cd ${DIRECTORY}/libs/ && \
+	${AR} rcs libduckdb_part1.a dir1/* && \
+	${AR} rcs libduckdb_part2.a dir2/* && \
+	rm -rf dir1 && \
+	rm -rf dir2
+
+fetch.static.lib:
+	cd ${DIRECTORY} && \
+	curl -OL https://github.com/duckdb/duckdb/releases/download/${VERSION}/${FILENAME}.zip && \
+	rm -rf libs && \
+	mkdir libs && \
+	rm -f duckdb.h && \
+	unzip ${FILENAME}.zip && \
+	mv libduckdb_bundle.a libs/libduckdb.a && \
+	rm -f ${FILENAME}.zip
