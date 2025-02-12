@@ -10,8 +10,8 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: fetch darwin static libs
         run: |
-          make fetch.static.lib DIRECTORY=darwin_arm64 VERSION=v1.2.0 FILENAME=static-lib-osx-amd64
-          make fetch.static.lib DIRECTORY=darwin_amd64 VERSION=v1.2.0 FILENAME=static-lib-osx-arm64
+          make fetch.static.lib DIRECTORY=darwin_arm64 VERSION=v1.2.0 FILENAME=static-lib-osx-arm64
+          make fetch.static.lib DIRECTORY=darwin_amd64 VERSION=v1.2.0 FILENAME=static-lib-osx-amd64
       - name: fetch and split linux static libs
         run: |
           make fetch.static.lib DIRECTORY=linux_amd64 VERSION=v1.2.0 FILENAME=static-lib-linux-amd64
