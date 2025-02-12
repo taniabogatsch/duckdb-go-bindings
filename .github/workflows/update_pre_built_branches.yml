@@ -8,8 +8,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - shell: bash
+      - name: Replace bindings
+        shell: bash
         run: |
+          ls
           rm -f darwin_amd64/bindings.go
           cp bindings.go darwin_amd64/bindings.go
           rm -f darwin_arm64/bindings.go
