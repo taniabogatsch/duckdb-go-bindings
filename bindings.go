@@ -4,7 +4,9 @@ package duckdb_go_bindings
 #include <duckdb.h>
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // ------------------------------------------------------------------ //
 // Enums
@@ -2077,9 +2079,7 @@ func ValueInt64(res *Result, col uint64, row uint64) int64 {
 // duckdb_query_arrow
 
 func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
-	var arrowSchema C.duckdb_arrow_schema
-	state := C.duckdb_query_arrow_schema(arrow.data(), &arrowSchema)
-	outSchema.Ptr = unsafe.Pointer(arrowSchema)
+	state := C.duckdb_query_arrow_schema(arrow.data(), (*C.duckdb_arrow_schema)(outSchema.Ptr))
 	return State(state)
 }
 
@@ -2087,9 +2087,7 @@ func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
 // duckdb_result_arrow_array
 
 func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
-	var arrowArray C.duckdb_arrow_array
-	state := C.duckdb_query_arrow_array(arrow.data(), &arrowArray)
-	outArray.Ptr = unsafe.Pointer(arrowArray)
+	state := C.duckdb_query_arrow_array(arrow.data(), (*C.duckdb_arrow_array)(outArray.Ptr))
 	return State(state)
 }
 
