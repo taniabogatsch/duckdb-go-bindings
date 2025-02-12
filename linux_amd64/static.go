@@ -1,4 +1,4 @@
-package duckdb_go_bindings
+package duckdb_go_bindings_linux_amd64
 
 /*
 #cgo CPPFLAGS: -DDUCKDB_STATIC_BUILD
