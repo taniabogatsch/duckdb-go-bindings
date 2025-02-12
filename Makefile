@@ -44,8 +44,8 @@ split.artefacts:
     mv TProtocol.cpp.${FILETYPE} ../parquet/ && \
     mv TTransportException.cpp.${FILETYPE} ../parquet/ && \
     mv TBufferTransports.cpp.${FILETYPE} ../parquet/ && \
-    mv snappy.cc.o ../parquet/ && \
-    mv snappy-sinksource.cc.o ../parquet/ && \
+    mv snappy.cc.${FILETYPE} ../parquet/ && \
+    mv snappy-sinksource.cc.${FILETYPE} ../parquet/ && \
     mv lz4.cpp.${FILETYPE} ../parquet/ && \
     mv dictionary_hash.cpp.${FILETYPE} ../parquet/ && \
     mv backward_references_hq.cpp.${FILETYPE} ../parquet/ && \
