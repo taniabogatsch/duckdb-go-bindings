@@ -1,4 +1,4 @@
-package duckdb_go_bindings_linux_amd64
+package duckdb_go_bindings
 
 /*
 #include <duckdb.h>
