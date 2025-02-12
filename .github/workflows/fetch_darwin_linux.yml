@@ -1,4 +1,4 @@
-name: fetch static libs for darwin and linux
+name: Fetch Darwin Linux
 on:
   workflow_dispatch:
 jobs:
@@ -8,18 +8,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - name: fetch darwin static libs
+      - name: Fetch Darwin
         run: |
           make fetch.static.lib DIRECTORY=darwin_arm64 VERSION=v1.2.0 FILENAME=static-lib-osx-arm64
           make fetch.static.lib DIRECTORY=darwin_amd64 VERSION=v1.2.0 FILENAME=static-lib-osx-amd64
-      - name: fetch and split linux static libs
+      - name: Fetch Linux
         run: |
           make fetch.static.lib DIRECTORY=linux_amd64 VERSION=v1.2.0 FILENAME=static-lib-linux-amd64
           make split.artefacts DIRECTORY=linux_amd64 FILETYPE=o
           make fetch.static.lib DIRECTORY=linux_arm64 VERSION=v1.2.0 FILENAME=static-lib-linux-arm64
           make split.artefacts DIRECTORY=linux_arm64 FILETYPE=o
         shell: bash
-      - name: commit
+      - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: push darwin and linux libs
