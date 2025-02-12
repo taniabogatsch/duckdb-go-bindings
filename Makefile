@@ -10,8 +10,8 @@ split.artefacts:
 	cd ../../.. && \
 	python3 scripts/move_files.py -src ${DIRECTORY}/libs/dir1/ -dst ${DIRECTORY}/libs/dir2/ && \
 	cd ${DIRECTORY}/libs/ && \
-	${AR} rcs libduckdb_part1.a dir1/* && \
-	${AR} rcs libduckdb_part2.a dir2/* && \
+	${AR} r libduckdb_part1.a dir1/* && \
+	${AR} r libduckdb_part2.a dir2/* && \
 	rm -rf dir1 && \
 	rm -rf dir2
 
