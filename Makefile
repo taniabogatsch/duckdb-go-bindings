@@ -4,7 +4,8 @@ split.artefacts:
 	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/dir1/libduckdb.a && \
 	cd ${DIRECTORY}/libs/dir1 && \
 	${AR} -x libduckdb.a && \
-	rm libduckdb.a && \
+	rm -f __.SYMDEF && \
+	rm -f libduckdb.a && \
 	cd ../../.. && \
 	python3 scripts/move_files.py -src ${DIRECTORY}/libs/dir1/ -dst ${DIRECTORY}/libs/dir2/ && \
 	cd ${DIRECTORY}/libs/ && \
