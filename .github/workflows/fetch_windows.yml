@@ -10,7 +10,7 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Fetch Windows
         run: |
-          make fetch.static.lib DIRECTORY=windows_amd64
+          make fetch.static.lib.mingw DIRECTORY=windows_amd64
           make split.artefacts DIRECTORY=windows_amd64 FILETYPE=obj
         shell: bash
       - name: Commit
