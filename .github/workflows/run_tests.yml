@@ -18,6 +18,8 @@ jobs:
             dir: "darwin_arm64"
           - os: "ubuntu-latest"
             dir: "linux_amd64"
+          - os: "ubuntu-24.04-arm"
+            dir: "linux_arm64"
           - os: "windows-latest"
             dir: "windows_amd64"
       fail-fast: false

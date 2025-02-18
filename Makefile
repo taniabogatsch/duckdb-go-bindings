@@ -125,3 +125,7 @@ fetch.static.lib.mingw:
 	mv libduckdb_bundle.a libs/libduckdb.a && \
 	rm -f duckdb-static-lib-windows-mingw.zip && \
 	rm -f static-lib-windows-mingw.zip
+
+update.binding:
+	rm -f ${DIRECTORY}/bindings.go && \
+	cp bindings.go ${DIRECTORY}/bindings.go

@@ -11,16 +11,11 @@ jobs:
       - name: Replace Bindings
         shell: bash
         run: |
-          rm -f darwin_amd64/bindings.go
-          cp bindings.go darwin_amd64/bindings.go
-          rm -f darwin_arm64/bindings.go
-          cp bindings.go darwin_arm64/bindings.go
-          rm -f linux_amd64/bindings.go
-          cp bindings.go linux_amd64/bindings.go
-          rm -f linux_arm64/bindings.go
-          cp bindings.go linux_arm64/bindings.go
-          rm -f windows_amd64/bindings.go
-          cp bindings.go windows_amd64/bindings.go
+          make update.binding DIRECTORY=darwin_amd64
+          make update.binding DIRECTORY=darwin_arm64
+          make update.binding DIRECTORY=linux_amd64
+          make update.binding DIRECTORY=linux_arm64
+          make update.binding DIRECTORY=windows_amd64
       - name: Push Updated Bindings
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
