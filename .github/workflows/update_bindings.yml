@@ -11,11 +11,11 @@ jobs:
       - name: Replace Bindings
         shell: bash
         run: |
-          make update.binding DIRECTORY=darwin_amd64
-          make update.binding DIRECTORY=darwin_arm64
-          make update.binding DIRECTORY=linux_amd64
-          make update.binding DIRECTORY=linux_arm64
-          make update.binding DIRECTORY=windows_amd64
+          make update.binding DIRECTORY=darwin-amd64
+          make update.binding DIRECTORY=darwin-arm64
+          make update.binding DIRECTORY=linux-amd64
+          make update.binding DIRECTORY=linux-arm64
+          make update.binding DIRECTORY=windows-amd64
       - name: Push Updated Bindings
         uses: stefanzweifel/git-auto-commit-action@v5
         with:

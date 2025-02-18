@@ -13,15 +13,15 @@ jobs:
       matrix:
         include:
           - os: "macos-13"
-            dir: "darwin_amd64"
+            dir: "darwin-amd64"
           - os: "macos-14"
-            dir: "darwin_arm64"
+            dir: "darwin-arm64"
           - os: "ubuntu-latest"
-            dir: "linux_amd64"
+            dir: "linux-amd64"
           - os: "ubuntu-24.04-arm"
-            dir: "linux_arm64"
+            dir: "linux-arm64"
           - os: "windows-latest"
-            dir: "windows_amd64"
+            dir: "windows-amd64"
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
