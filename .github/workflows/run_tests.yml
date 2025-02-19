@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 1.23
-      - name: Test ${{ matrix.dir }} ${{ matrix.dir }}
+      - name: Test ${{ matrix.dir }}
         run: |
           cd ${{ matrix.dir }}
           go test
@@ -51,15 +51,34 @@ jobs:
 
   static-lib-tests:
     name: Test Static Libs
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
+    strategy:
+      matrix:
+        include:
+          - os: "macos-13"
+            dir: "darwin-amd64"
+            flags: "-lduckdb -lc++"
+          - os: "macos-14"
+            dir: "darwin-arm64"
+            flags: "-lduckdb -lc++"
+          - os: "ubuntu-latest"
+            dir: "linux-amd64"
+            flags: "-lcore -lcorefunctions -lparquet -licu -lstdc++ -lm -ldl"
+          - os: "ubuntu-24.04-arm"
+            dir: "linux-arm64"
+            flags: "-lcore -lcorefunctions -lparquet -licu -lstdc++ -lm -ldl"
+          - os: "windows-latest"
+            dir: "windows-amd64"
+            flags: "-lcore -lcorefunctions -lparquet -licu -lws2_32 -lwsock32 -lrstrtmgr -lstdc++ -lm --static"
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: 1.23
-      - name: Test darwin arm64
+      - name: Test ${{ matrix.dir }}
         run: |
-          CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="-lduckdb -lc++ -L${SRCDIR}darwin-arm64/libs" go test
+          CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/libs" go test
