@@ -35,10 +35,24 @@ jobs:
 
   dynamic-lib-tests:
     name: Test Dynamic Libs
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
+    strategy:
+      matrix:
+        include:
+          - os: "macos-13"
+            filename: "libduckdb-osx-universal"
+          - os: "macos-14"
+            filename: "libduckdb-osx-universal"
+          - os: "ubuntu-latest"
+            filename: "libduckdb-linux-amd64"
+          - os: "ubuntu-24.04-arm"
+            filename: "libduckdb-linux-aarch64"
+          - os: "windows-latest"
+            filename: "libduckdb-windows-amd64"
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -46,8 +60,8 @@ jobs:
           go-version: 1.23
       - name: Test darwin arm64
         run: |
-          make test.dynamic.lib.osx
-          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-osx/" DYLD_LIBRARY_PATH=${SRCDIR}dynamic-osx/ go test
+          make test.dynamic.lib FILENAME=${{ matrix.filename }}
+          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir/" DYLD_LIBRARY_PATH=${SRCDIR}dynamic-dir/ go test
 
   static-lib-tests:
     name: Test Static Libs
