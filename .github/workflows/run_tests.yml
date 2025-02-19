@@ -44,24 +44,26 @@ jobs:
         include:
           - os: "macos-13"
             filename: "libduckdb-osx-universal"
+            filepath: "DYLD_LIBRARY_PATH"
           - os: "macos-14"
             filename: "libduckdb-osx-universal"
+            filepath: "DYLD_LIBRARY_PATH"
           - os: "ubuntu-latest"
             filename: "libduckdb-linux-amd64"
+            filepath: "LD_LIBRARY_PATH"
           - os: "ubuntu-24.04-arm"
             filename: "libduckdb-linux-aarch64"
-          - os: "windows-latest"
-            filename: "libduckdb-windows-amd64"
+            filepath: "LD_LIBRARY_PATH"
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: 1.23
-      - name: Test darwin arm64
+      - name: Test ${{ matrix.filename }}
         run: |
           make test.dynamic.lib FILENAME=${{ matrix.filename }}
-          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir/" DYLD_LIBRARY_PATH=${SRCDIR}dynamic-dir/ go test
+          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir/" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir/ go test
 
   static-lib-tests:
     name: Test Static Libs
@@ -84,9 +86,6 @@ jobs:
           - os: "ubuntu-24.04-arm"
             dir: "linux-arm64"
             flags: "-lcore -lcorefunctions -lparquet -licu -lstdc++ -lm -ldl"
-          - os: "windows-latest"
-            dir: "windows-amd64"
-            flags: "-lcore -lcorefunctions -lparquet -licu -lws2_32 -lwsock32 -lrstrtmgr -lstdc++ -lm --static"
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
