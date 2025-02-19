@@ -129,3 +129,9 @@ fetch.static.lib.mingw:
 update.binding:
 	rm -f ${DIRECTORY}/bindings.go && \
 	cp bindings.go ${DIRECTORY}/bindings.go
+
+test.dynamic.lib.osx:
+	mkdir dynamic-osx && \
+	cd dynamic-osx && \
+	curl -OL https://github.com/duckdb/duckdb/releases/download/v1.2.0/libduckdb-osx-universal.zip && \
+	unzip libduckdb-osx-universal.zip && \

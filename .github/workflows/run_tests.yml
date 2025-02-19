@@ -4,7 +4,7 @@ on:
 
 jobs:
   go-tests:
-    name: Tests
+    name: Test Pre-Built Libs
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -32,3 +32,19 @@ jobs:
         run: |
           cd ${{ matrix.dir }}
           go test
+
+  dynamic-lib-tests:
+    name: Test Dynamic Libs
+    runs-on: macos-14
+    defaults:
+      run:
+        shell:bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23
+      - name: Test darwin arm64
+        run: |
+          make test.dynamic.lib.osx
+          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}/dynamic-osx/libduckdb-osx-universal/" DYLD_LIBRARY_PATH=${SRCDIR}/dynamic-osx/libduckdb-osx-universal/ go test
