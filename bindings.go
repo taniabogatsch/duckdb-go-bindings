@@ -4,6 +4,7 @@ package duckdb_go_bindings
 #include <duckdb.h>
 */
 import "C"
+
 import (
 	"log"
 	"sync/atomic"
@@ -2501,62 +2502,62 @@ var allocCounters = allocationCounters{}
 func VerifyAllocationCounters() {
 	dbCount := allocCounters.db.Load()
 	if dbCount != 0 {
-		log.Fatalf("db count is %d", dbCount)
+		log.Panicf("db count is %d", dbCount)
 	}
 	connCount := allocCounters.conn.Load()
 	if connCount != 0 {
-		log.Fatalf("conn count is %d", connCount)
+		log.Panicf("conn count is %d", connCount)
 	}
 	configCount := allocCounters.config.Load()
 	if configCount != 0 {
-		log.Fatalf("config count is %d", configCount)
+		log.Panicf("config count is %d", configCount)
 	}
 	logicalTypeCount := allocCounters.logicalType.Load()
 	if logicalTypeCount != 0 {
-		log.Fatalf("logical type count is %d", logicalTypeCount)
+		log.Panicf("logical type count is %d", logicalTypeCount)
 	}
 	preparedStmtCount := allocCounters.preparedStmt.Load()
 	if preparedStmtCount != 0 {
-		log.Fatalf("preparesd statement count is %d", preparedStmtCount)
+		log.Panicf("preparesd statement count is %d", preparedStmtCount)
 	}
 	extractedStmtsCount := allocCounters.extractedStmts.Load()
 	if extractedStmtsCount != 0 {
-		log.Fatalf("extracted statements count is %d", extractedStmtsCount)
+		log.Panicf("extracted statements count is %d", extractedStmtsCount)
 	}
 	pendingResCount := allocCounters.pendingRes.Load()
 	if pendingResCount != 0 {
-		log.Fatalf("pending res count is %d", pendingResCount)
+		log.Panicf("pending res count is %d", pendingResCount)
 	}
 	resCount := allocCounters.res.Load()
 	if resCount != 0 {
-		log.Fatalf("res count is %d", resCount)
+		log.Panicf("res count is %d", resCount)
 	}
 	vCount := allocCounters.v.Load()
 	if vCount != 0 {
-		log.Fatalf("v count is %d", vCount)
+		log.Panicf("v count is %d", vCount)
 	}
 	chunkCount := allocCounters.chunk.Load()
 	if chunkCount != 0 {
-		log.Fatalf("chunk count is %d", chunkCount)
+		log.Panicf("chunk count is %d", chunkCount)
 	}
 	scalarFuncCount := allocCounters.scalarFunc.Load()
 	if scalarFuncCount != 0 {
-		log.Fatalf("scalar function count is %d", scalarFuncCount)
+		log.Panicf("scalar function count is %d", scalarFuncCount)
 	}
 	scalarFuncSetCount := allocCounters.scalarFuncSet.Load()
 	if scalarFuncSetCount != 0 {
-		log.Fatalf("scalar function set count is %d", scalarFuncSetCount)
+		log.Panicf("scalar function set count is %d", scalarFuncSetCount)
 	}
 	tableFuncCount := allocCounters.tableFunc.Load()
 	if tableFuncCount != 0 {
-		log.Fatalf("table function count is %d", tableFuncCount)
+		log.Panicf("table function count is %d", tableFuncCount)
 	}
 	appenderCount := allocCounters.appender.Load()
 	if appenderCount != 0 {
-		log.Fatalf("appender count is %d", appenderCount)
+		log.Panicf("appender count is %d", appenderCount)
 	}
 	arrowCount := allocCounters.arrow.Load()
 	if arrowCount != 0 {
-		log.Fatalf("arrow count is %d", arrowCount)
+		log.Panicf("arrow count is %d", arrowCount)
 	}
 }
