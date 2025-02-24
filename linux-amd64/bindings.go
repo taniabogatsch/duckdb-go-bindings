@@ -2200,7 +2200,27 @@ func AppenderCreate(conn Connection, schema string, table string, outAppender *A
 	return state
 }
 
-// duckdb_appender_create_ext
+// AppenderCreateExt wraps duckdb_appender_create_ext.
+// outAppender must be destroyed with AppenderDestroy.
+func AppenderCreateExt(conn Connection, catalog string, schema string, table string, outAppender *Appender) State {
+	cCatalog := C.CString(catalog)
+	defer Free(unsafe.Pointer(cCatalog))
+
+	cSchema := C.CString(schema)
+	defer Free(unsafe.Pointer(cSchema))
+
+	cTable := C.CString(table)
+	defer Free(unsafe.Pointer(cTable))
+
+	var appender C.duckdb_appender
+	state := State(C.duckdb_appender_create_ext(conn.data(), cCatalog, cSchema, cTable, &appender))
+	outAppender.Ptr = unsafe.Pointer(appender)
+
+	if debugMode {
+		allocCounters.appender.Add(1)
+	}
+	return state
+}
 
 func AppenderColumnCount(appender Appender) uint64 {
 	count := C.duckdb_appender_column_count(appender.data())
@@ -2248,8 +2268,18 @@ func AppenderDestroy(appender *Appender) State {
 	return State(state)
 }
 
-// duckdb_appender_add_column
-// duckdb_appender_clear_columns
+func AppenderAddColumn(appender Appender, name string) State {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	state := C.duckdb_appender_add_column(appender.data(), cName)
+	return State(state)
+}
+
+func AppenderClearColumns(appender Appender) State {
+	state := C.duckdb_appender_clear_columns(appender.data())
+	return State(state)
+}
+
 // duckdb_appender_begin_row
 // duckdb_appender_end_row
 // duckdb_append_default
@@ -2286,11 +2316,64 @@ func AppendDataChunk(appender Appender, chunk DataChunk) State {
 // ------------------------------------------------------------------ //
 
 // duckdb_table_description_create
-// duckdb_table_description_create_ext
-// duckdb_table_description_destroy
-// duckdb_table_description_error
-// duckdb_column_has_default
-// duckdb_table_description_get_column_name
+
+// TableDescriptionCreateExt wraps duckdb_table_description_create_ext.
+// outDesc must be destroyed with TableDescriptionDestroy.
+func TableDescriptionCreateExt(conn Connection, catalog string, schema string, table string, outDesc *TableDescription) State {
+	cCatalog := C.CString(catalog)
+	defer Free(unsafe.Pointer(cCatalog))
+
+	cSchema := C.CString(schema)
+	defer Free(unsafe.Pointer(cSchema))
+
+	cTable := C.CString(table)
+	defer Free(unsafe.Pointer(cTable))
+
+	var description C.duckdb_table_description
+	state := State(C.duckdb_table_description_create_ext(conn.data(), cCatalog, cSchema, cTable, &description))
+	outDesc.Ptr = unsafe.Pointer(description)
+
+	if debugMode {
+		allocCounters.tableDesc.Add(1)
+	}
+	return state
+}
+
+// TableDescriptionDestroy wraps duckdb_table_description_destroy.
+func TableDescriptionDestroy(desc *TableDescription) {
+	if debugMode {
+		allocCounters.tableDesc.Add(-1)
+	}
+	if desc.Ptr == nil {
+		return
+	}
+	data := desc.data()
+	C.duckdb_table_description_destroy(&data)
+	desc.Ptr = nil
+}
+
+func TableDescriptionError(desc TableDescription) string {
+	err := C.duckdb_table_description_error(desc.data())
+	return C.GoString(err)
+}
+
+func ColumnHasDefault(desc TableDescription, index uint64, outBool *bool) State {
+	var b C.bool
+	state := C.duckdb_column_has_default(desc.data(), C.idx_t(index), &b)
+	*outBool = bool(b)
+	return State(state)
+}
+
+func TableDescriptionGetColumnName(desc TableDescription, index uint64) string {
+	cName := C.duckdb_table_description_get_column_name(desc.data(), C.idx_t(index))
+	defer Free(unsafe.Pointer(cName))
+	return C.GoString(cName)
+}
+
+//===--------------------------------------------------------------------===//
+// Threading Information
+//===--------------------------------------------------------------------===//
+
 // duckdb_execute_tasks
 // duckdb_create_task_state
 // duckdb_execute_tasks_state
@@ -2494,6 +2577,7 @@ type allocationCounters struct {
 	scalarFuncSet  atomic.Int64
 	tableFunc      atomic.Int64
 	appender       atomic.Int64
+	tableDesc      atomic.Int64
 	arrow          atomic.Int64
 }
 
@@ -2555,6 +2639,10 @@ func VerifyAllocationCounters() {
 	appenderCount := allocCounters.appender.Load()
 	if appenderCount != 0 {
 		log.Panicf("appender count is %d", appenderCount)
+	}
+	tableDescCount := allocCounters.tableDesc.Load()
+	if tableDescCount != 0 {
+		log.Panicf("table description count is %d", tableDescCount)
 	}
 	arrowCount := allocCounters.arrow.Load()
 	if arrowCount != 0 {
