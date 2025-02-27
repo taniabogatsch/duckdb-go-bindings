@@ -7,5 +7,5 @@ import (
 )
 
 func TestOpen(t *testing.T) {
-	require.Equal(t, uint64(2048), VectorSize())
+	require.Equal(t, IdxT(2048), VectorSize())
 }
