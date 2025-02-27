@@ -1,5 +1,7 @@
 # duckdb-go-bindings
 
+🚧 WORK IN PROGRESS 🚧
+
 This repository wraps DuckDB's C API calls in Go native types and functions.
 
 The main module (`github.com/duckdb/duckdb-go-bindings`) does not link any pre-built static library.
