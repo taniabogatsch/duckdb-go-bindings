@@ -209,116 +209,84 @@ type (
 
 // Helper functions for types without internal pointers:
 
-func DateSetDays(date *Date, days int32) {
-	date.days = C.int32_t(days)
+// NewDate sets the members of a duckdb_date.
+func NewDate(days int32) *Date {
+	return &Date{days: C.int32_t(days)}
 }
 
-func DateStructGetYear(date *DateStruct) int32 {
-	return int32(date.year)
+// DateStructMembers returns the year, month, and day of a duckdb_date.
+func DateStructMembers(date *DateStruct) (int32, int8, int8) {
+	return int32(date.year), int8(date.month), int8(date.day)
 }
 
-func DateStructGetMonth(date *DateStruct) int8 {
-	return int8(date.month)
+// NewTime sets the members of a duckdb_time.
+func NewTime(micros int64) *Time {
+	return &Time{micros: C.int64_t(micros)}
 }
 
-func DateStructGetDay(date *DateStruct) int8 {
-	return int8(date.day)
-}
-
-func TimeGetMicros(ti *Time) int64 {
+// TimeMembers returns the micros of a duckdb_time.
+func TimeMembers(ti *Time) int64 {
 	return int64(ti.micros)
 }
 
-func TimeSetMicros(ti *Time, micros int64) {
-	ti.micros = C.int64_t(micros)
+// TimeStructMembers returns the hour, min, sec, and micros of a duckdb_time_struct.
+func TimeStructMembers(ti *TimeStruct) (int8, int8, int8, int32) {
+	return int8(ti.hour), int8(ti.min), int8(ti.sec), int32(ti.micros)
 }
 
-func TimeStructGetHour(ti *TimeStruct) int8 {
-	return int8(ti.hour)
+// TimeTZStructMembers returns the time and offset of a duckdb_time_tz_struct.
+func TimeTZStructMembers(ti *TimeTZStruct) (TimeStruct, int32) {
+	return ti.time, int32(ti.offset)
 }
 
-func TimeStructGetMinute(ti *TimeStruct) int8 {
-	return int8(ti.min)
+// NewTimestamp sets the members of a duckdb_timestamp.
+func NewTimestamp(micros int64) *Timestamp {
+	return &Timestamp{micros: C.int64_t(micros)}
 }
 
-func TimeStructGetSecond(ti *TimeStruct) int8 {
-	return int8(ti.sec)
-}
-
-func TimeStructGetMicros(ti *TimeStruct) int32 {
-	return int32(ti.micros)
-}
-
-func TimeTZStructGetTimeStruct(ti *TimeTZStruct) TimeStruct {
-	return ti.time
-}
-
-func TimeTZStructGetOffset(ti *TimeTZStruct) int32 {
-	return int32(ti.offset)
-}
-
-func TimestampGetMicros(ts *Timestamp) int64 {
+// TimestampMembers returns the micros of a duckdb_timestamp.
+func TimestampMembers(ts *Timestamp) int64 {
 	return int64(ts.micros)
 }
 
-func TimestampSetMicros(ts *Timestamp, micros int64) {
-	ts.micros = C.int64_t(micros)
+// NewInterval sets the members of a duckdb_interval.
+func NewInterval(months int32, days int32, micros int64) *Interval {
+	return &Interval{
+		months: C.int32_t(months),
+		days:   C.int32_t(days),
+		micros: C.int64_t(micros),
+	}
 }
 
-func IntervalGetMonths(i *Interval) int32 {
-	return int32(i.months)
+// IntervalMembers returns the months, days, and micros of a duckdb_interval.
+func IntervalMembers(i *Interval) (int32, int32, int64) {
+	return int32(i.months), int32(i.days), int64(i.micros)
 }
 
-func IntervalSetMonths(i *Interval, months int32) {
-	i.months = C.int32_t(months)
+// NewHugeInt sets the members of a duckdb_hugeint.
+func NewHugeInt(lower uint64, upper int64) *HugeInt {
+	return &HugeInt{
+		lower: C.uint64_t(lower),
+		upper: C.int64_t(upper),
+	}
 }
 
-func IntervalGetDays(i *Interval) int32 {
-	return int32(i.days)
+// HugeIntMembers returns the lower and upper of a duckdb_hugeint.
+func HugeIntMembers(hi *HugeInt) (uint64, int64) {
+	return uint64(hi.lower), int64(hi.upper)
 }
 
-func IntervalSetDays(i *Interval, days int32) {
-	i.days = C.int32_t(days)
+// NewListEntry sets the members of a duckdb_list_entry.
+func NewListEntry(offset uint64, length uint64) *ListEntry {
+	return &ListEntry{
+		offset: C.uint64_t(offset),
+		length: C.uint64_t(length),
+	}
 }
 
-func IntervalGetMicros(i *Interval) int64 {
-	return int64(i.micros)
-}
-
-func IntervalSetMicros(i *Interval, micros int64) {
-	i.micros = C.int64_t(micros)
-}
-
-func HugeIntGetLower(hugeInt *HugeInt) uint64 {
-	return uint64(hugeInt.lower)
-}
-
-func HugeIntSetLower(hugeInt *HugeInt, lower uint64) {
-	hugeInt.lower = C.uint64_t(lower)
-}
-
-func HugeIntGetUpper(hugeInt *HugeInt) int64 {
-	return int64(hugeInt.upper)
-}
-
-func HugeIntSetUpper(hugeInt *HugeInt, upper int64) {
-	hugeInt.upper = C.int64_t(upper)
-}
-
-func ListEntryGetOffset(entry *ListEntry) uint64 {
-	return uint64(entry.offset)
-}
-
-func ListEntrySetOffset(entry *ListEntry, offset uint64) {
-	entry.offset = C.uint64_t(offset)
-}
-
-func ListEntryGetLength(entry *ListEntry) uint64 {
-	return uint64(entry.length)
-}
-
-func ListEntrySetLength(entry *ListEntry, length uint64) {
-	entry.length = C.uint64_t(length)
+// ListEntryMembers returns the offset and length of a duckdb_list_entry.
+func ListEntryMembers(entry *ListEntry) (uint64, uint64) {
+	return uint64(entry.offset), uint64(entry.length)
 }
 
 // Types with internal pointers:
