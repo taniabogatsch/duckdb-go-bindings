@@ -11,7 +11,6 @@ jobs:
       - name: Fetch and Build DuckDB
         run: |
           make fetch.custom.duckdb DIRECTORY=https://github.com/taniabogatsch/duckdb.git BRANCH=logging
-          make split.artefacts DIRECTORY=custom-duckdb-linux-amd64 FILETYPE=o
         shell: bash
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
