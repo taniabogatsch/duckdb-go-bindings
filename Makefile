@@ -126,6 +126,13 @@ fetch.static.lib.mingw:
 	rm -f duckdb-static-lib-windows-mingw.zip && \
 	rm -f static-lib-windows-mingw.zip
 
+build.custom.duckdb:
+	git clone ${DIRECTORY} && \
+	cd duckdb && \
+	git checkout ${BRANCH} && \
+	CORE_EXTENSIONS="icu;json;autocomplete;parquet" make bundle-library
+
+
 update.binding:
 	rm -f ${DIRECTORY}/bindings.go && \
 	cp bindings.go ${DIRECTORY}/bindings.go
