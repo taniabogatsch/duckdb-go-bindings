@@ -136,8 +136,8 @@ fetch.custom.duckdb:
 	rm -rf libs && \
 	mkdir libs && \
 	rm -f duckdb.h && \
-	mv src/include/duckdb.h duckdb.h && \
-	mv build/release/libduckdb_bundle.a libs/libduckdb.a && \
+	mv duckdb/src/include/duckdb.h duckdb.h && \
+	mv duckdb/build/release/libduckdb_bundle.a libs/libduckdb.a && \
 	rm -rf duckdb
 
 update.binding:
