@@ -131,15 +131,15 @@ fetch.custom.duckdb:
 	git clone ${DIRECTORY} && \
 	cd duckdb && \
 	git checkout ${BRANCH} && \
-	CORE_EXTENSIONS="icu;json;autocomplete;parquet" BUILD_JEMALLOC=0 BUILD_SHELL=0 BUILD_UNITTESTS=0 DUCKDB_PLATFORM=any ENABLE_EXTENSION_AUTOLOADING=1 ENABLE_EXTENSION_AUTOINSTALL=1 make bundle-library && \
+	CORE_EXTENSIONS="icu;json;autocomplete;parquet" BUILD_JEMALLOC=0 BUILD_SHELL=0 BUILD_UNITTESTS=0 DUCKDB_PLATFORM=any ENABLE_EXTENSION_AUTOLOADING=1 ENABLE_EXTENSION_AUTOINSTALL=1 make release && \
 	cd .. && \
 	rm -rf libs && \
 	mkdir libs && \
 	rm -f duckdb.h && \
 	mv duckdb/src/include/duckdb.h duckdb.h && \
-	cp duckdb/src/libduckdb_static.a libs/. && \
-	cp duckdb/third_party/*/libduckdb_*.a libs/. && \
-	cp duckdb/extension/*/lib*_extension.a libs/. && \
+	cp duckdb/build/release/src/libduckdb_static.a libs/. && \
+	cp duckdb/build/release/third_party/*/libduckdb_*.a libs/. && \
+	cp duckdb/build/release/extension/*/lib*_extension.a libs/. && \
 	rm -rf duckdb
 
 update.binding:
