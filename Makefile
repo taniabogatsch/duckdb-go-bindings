@@ -128,11 +128,9 @@ fetch.static.lib.mingw:
 
 fetch.custom.duckdb:
 	cd .. && \
-	ls && \
 	git clone ${DIRECTORY} && \
 	cd duckdb && \
 	git checkout ${BRANCH}
-
 
 extract.custom.libs:
 	cd .. && \
