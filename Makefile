@@ -127,22 +127,23 @@ fetch.static.lib.mingw:
 	rm -f static-lib-windows-mingw.zip
 
 fetch.custom.duckdb:
-	cd custom-duckdb-linux-amd64 && \
+	cd .. && \
+	ls && \
 	git clone ${DIRECTORY} && \
 	cd duckdb && \
 	git checkout ${BRANCH}
 
 
 extract.custom.libs:
-	cd custom-duckdb-linux-amd64 && \
-	rm -rf libs && \
-	mkdir libs && \
-	rm -f duckdb.h && \
-	mv duckdb/src/include/duckdb.h duckdb.h && \
-	cp duckdb/build/release/src/libduckdb_static.a libs/. && \
-	cp duckdb/build/release/third_party/*/libduckdb_*.a libs/. && \
-	cp duckdb/build/release/extension/*/lib*_extension.a libs/. && \
-	rm -rf duckdb
+	cd .. && \
+	rm -rf duckdb-go-bindings/custom-duckdb-linux-amd64/libs && \
+	mkdir duckdb-go-bindings/custom-duckdb-linux-amd64/libs && \
+	rm -f duckdb-go-bindings/custom-duckdb-linux-amd64/duckdb.h && \
+	mv duckdb/src/include/duckdb.h duckdb-go-bindings/custom-duckdb-linux-amd64/duckdb.h && \
+	cp duckdb/build/release/src/libduckdb_static.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
+	cp duckdb/build/release/third_party/*/libduckdb_*.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
+	cp duckdb/build/release/extension/*/lib*_extension.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
+	cd duckdb-go-bindings
 
 update.binding:
 	rm -f ${DIRECTORY}/bindings.go && \
