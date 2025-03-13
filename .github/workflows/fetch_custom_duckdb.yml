@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   custom-linux-build:
-    name: Linux CLI (amd64)
+    name: Custom Linux AMD64
     runs-on: ubuntu-latest
 
     steps:
