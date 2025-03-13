@@ -20,6 +20,8 @@ jobs:
         shell: bash
         run: |
           make fetch.custom.duckdb DIRECTORY=https://github.com/taniabogatsch/duckdb.git BRANCH=logging
+          ls
+          cd duckdb
           export PWD=`pwd`
           docker run                                                             \
           -v$PWD:$PWD                                                            \
@@ -32,7 +34,7 @@ jobs:
           -e BUILD_BENCHMARK=1                                                   \
           -e FORCE_WARN_UNUSED=1                                                 \
           quay.io/pypa/manylinux2014_${{ matrix.config.image }}                  \
-          bash -c "ls && yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make -C $PWD"
+          bash -c "yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make -C $PWD"
 
       - name: Extract Libs
         shell: bash
