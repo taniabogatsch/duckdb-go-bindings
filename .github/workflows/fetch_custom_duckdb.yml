@@ -21,7 +21,7 @@ jobs:
         run: |
           make fetch.custom.duckdb DIRECTORY=https://github.com/taniabogatsch/duckdb.git BRANCH=logging
           ls
-          cd duckdb
+          cd custom-duckdb-linux-amd64/duckdb
           export PWD=`pwd`
           docker run                                                             \
           -v$PWD:$PWD                                                            \
