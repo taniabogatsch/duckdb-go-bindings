@@ -130,9 +130,10 @@ fetch.custom.duckdb:
 	cd custom-duckdb-linux-amd64 && \
 	git clone ${DIRECTORY} && \
 	cd duckdb && \
-	git checkout ${BRANCH} && \
-	CORE_EXTENSIONS="icu;json;autocomplete;parquet" BUILD_JEMALLOC=0 BUILD_SHELL=0 BUILD_UNITTESTS=0 DUCKDB_PLATFORM=any ENABLE_EXTENSION_AUTOLOADING=1 ENABLE_EXTENSION_AUTOINSTALL=1 make release && \
-	cd .. && \
+	git checkout ${BRANCH}
+
+
+extract.custom.libs:
 	rm -rf libs && \
 	mkdir libs && \
 	rm -f duckdb.h && \

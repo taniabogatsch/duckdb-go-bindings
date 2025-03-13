@@ -2,16 +2,43 @@ name: Fetch Custom DuckDB
 on:
   workflow_dispatch:
 jobs:
-  fetch-darwin-linux:
-    runs-on: ubuntu-latest
+  custom-linux-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ { runner: ubuntu-latest, arch: amd64, image: x86_64 } ]
+
+    name: Linux CLI (${{ matrix.config.arch }})
+    runs-on: ${{ matrix.config.runner }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-      - name: Fetch and Build DuckDB
+
+      - name: Build
+        shell: bash
         run: |
           make fetch.custom.duckdb DIRECTORY=https://github.com/taniabogatsch/duckdb.git BRANCH=logging
+          export PWD=`pwd`
+          docker run                                                             \
+          -v$PWD:$PWD                                                            \
+          -e CMAKE_BUILD_PARALLEL_LEVEL=2                                        \
+          -e OVERRIDE_GIT_DESCRIBE=$OVERRIDE_GIT_DESCRIBE                        \
+          -e EXTENSION_CONFIGS="$PWD/.github/config/bundled_extensions.cmake"    \
+          -e BUILD_JEMALLOC=0                                                    \
+          -e ENABLE_EXTENSION_AUTOLOADING=1                                      \
+          -e ENABLE_EXTENSION_AUTOINSTALL=1                                      \
+          -e BUILD_BENCHMARK=1                                                   \
+          -e FORCE_WARN_UNUSED=1                                                 \
+          quay.io/pypa/manylinux2014_${{ matrix.config.image }}                  \
+          bash -c "cd duckdb && yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make -C $PWD"
+
+      - name: Extract Libs
         shell: bash
+        run: |
+          make extract.custom.libs
+
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
