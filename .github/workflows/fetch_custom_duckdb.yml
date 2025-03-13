@@ -3,13 +3,8 @@ on:
   workflow_dispatch:
 jobs:
   custom-linux-build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [ { runner: ubuntu-latest, arch: amd64, image: x86_64 } ]
-
-    name: Linux CLI (${{ matrix.config.arch }})
-    runs-on: ${{ matrix.config.runner }}
+    name: Linux CLI (amd64)
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +28,7 @@ jobs:
           -e ENABLE_EXTENSION_AUTOINSTALL=1                                      \
           -e BUILD_BENCHMARK=1                                                   \
           -e FORCE_WARN_UNUSED=1                                                 \
-          quay.io/pypa/manylinux2014_${{ matrix.config.image }}                  \
+          quay.io/pypa/manylinux2014_x86_64                                      \
           bash -c "yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make -C $PWD"
 
       - name: Extract Libs

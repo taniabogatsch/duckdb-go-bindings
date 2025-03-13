@@ -134,6 +134,7 @@ fetch.custom.duckdb:
 
 
 extract.custom.libs:
+	cd custom-duckdb-linux-amd64 && \
 	rm -rf libs && \
 	mkdir libs && \
 	rm -f duckdb.h && \
