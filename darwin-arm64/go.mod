@@ -1,4 +1,4 @@
-module github.com/duckdb/duckdb-go-bindings/darwin-arm64
+module github.com/taniabogatsch/duckdb-go-bindings/darwin-arm64
 
 go 1.23.4
 

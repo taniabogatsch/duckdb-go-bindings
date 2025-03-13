@@ -1,4 +1,4 @@
-module github.com/duckdb/duckdb-go-bindings
+module github.com/taniabogatsch/duckdb-go-bindings
 
 go 1.23.4
 
