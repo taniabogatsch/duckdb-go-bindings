@@ -4,7 +4,6 @@ This repository wraps DuckDB's C API calls in Go native types and functions.
 
 ```diff
 ! Many type aliases and function wrappers are still missing.
-! PRs extending the bindings to match those in the C API are welcome!
 ```
 
 ## Releases
@@ -21,7 +20,7 @@ The main module (`github.com/duckdb/duckdb-go-bindings`) does not link any pre-b
 
 A few pre-built static libraries exist for different OS + architecture combinations.
 You can import these into your projects without providing additional build flags.
-`CGO` must be enabled, and you need a compiler available on your system.
+`CGO` must be enabled, and your system needs a compiler available.
 
 Here's a list:
 - `github.com/duckdb/duckdb-go-bindings/`...
