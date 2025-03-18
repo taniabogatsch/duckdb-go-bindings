@@ -193,18 +193,26 @@ type (
 	TimeTZ            = C.duckdb_time_tz
 	TimeTZStruct      = C.duckdb_time_tz_struct
 	Timestamp         = C.duckdb_timestamp
+	TimestampS        = C.duckdb_timestamp_s
+	TimestampMS       = C.duckdb_timestamp_ms
+	TimestampNS       = C.duckdb_timestamp_ns
 	TimestampStruct   = C.duckdb_timestamp_struct
 	Interval          = C.duckdb_interval
 	HugeInt           = C.duckdb_hugeint
 	UHugeInt          = C.duckdb_uhugeint
 	Decimal           = C.duckdb_decimal
 	QueryProgressType = C.duckdb_query_progress_type
-	StringT           = C.duckdb_string_t
-	ListEntry         = C.duckdb_list_entry
+	// StringT does not export New and Members.
+	// Use the respective StringT functions to access / write to this type.
+	StringT   = C.duckdb_string_t
+	ListEntry = C.duckdb_list_entry
 )
 
+// TODO:
 // duckdb_string
 // duckdb_blob
+// duckdb_bit
+// duckdb_varint
 // duckdb_extension_access
 
 // Helper functions for types without internal pointers:
@@ -212,6 +220,20 @@ type (
 // NewDate sets the members of a duckdb_date.
 func NewDate(days int32) *Date {
 	return &Date{days: C.int32_t(days)}
+}
+
+// DateMembers returns the days of a duckdb_date.
+func DateMembers(date *Date) int32 {
+	return int32(date.days)
+}
+
+// NewDateStruct sets the members of a duckdb_date_struct.
+func NewDateStruct(year int32, month int8, day int8) *DateStruct {
+	return &DateStruct{
+		year:  C.int32_t(year),
+		month: C.int8_t(month),
+		day:   C.int8_t(day),
+	}
 }
 
 // DateStructMembers returns the year, month, and day of a duckdb_date.
@@ -229,9 +251,37 @@ func TimeMembers(ti *Time) int64 {
 	return int64(ti.micros)
 }
 
+// NewTimeStruct sets the members of a duckdb_time_struct.
+func NewTimeStruct(hour int8, min int8, sec int8, micros int32) *TimeStruct {
+	return &TimeStruct{
+		hour:   C.int8_t(hour),
+		min:    C.int8_t(min),
+		sec:    C.int8_t(sec),
+		micros: C.int32_t(micros),
+	}
+}
+
 // TimeStructMembers returns the hour, min, sec, and micros of a duckdb_time_struct.
 func TimeStructMembers(ti *TimeStruct) (int8, int8, int8, int32) {
 	return int8(ti.hour), int8(ti.min), int8(ti.sec), int32(ti.micros)
+}
+
+// NewTimeTZ sets the members of a duckdb_time_tz.
+func NewTimeTZ(bits uint64) *TimeTZ {
+	return &TimeTZ{bits: C.uint64_t(bits)}
+}
+
+// TimeTZMembers returns the bits of a duckdb_time_tz.
+func TimeTZMembers(ti *TimeTZ) uint64 {
+	return uint64(ti.bits)
+}
+
+// NewTimeTZStruct sets the members of a duckdb_time_tz_struct.
+func NewTimeTZStruct(ti TimeStruct, offset int32) *TimeTZStruct {
+	return &TimeTZStruct{
+		time:   ti,
+		offset: C.int32_t(offset),
+	}
 }
 
 // TimeTZStructMembers returns the time and offset of a duckdb_time_tz_struct.
@@ -247,6 +297,49 @@ func NewTimestamp(micros int64) *Timestamp {
 // TimestampMembers returns the micros of a duckdb_timestamp.
 func TimestampMembers(ts *Timestamp) int64 {
 	return int64(ts.micros)
+}
+
+// NewTimestampS sets the members of a duckdb_timestamp_s.
+func NewTimestampS(seconds int64) *TimestampS {
+	return &TimestampS{seconds: C.int64_t(seconds)}
+}
+
+// TimestampSMembers returns the seconds of a duckdb_timestamp_s.
+func TimestampSMembers(ts *TimestampS) int64 {
+	return int64(ts.seconds)
+}
+
+// NewTimestampMS sets the members of a duckdb_timestamp_ms.
+func NewTimestampMS(millis int64) *TimestampMS {
+	return &TimestampMS{millis: C.int64_t(millis)}
+}
+
+// TimestampMSMembers returns the millis of a duckdb_timestamp_ms.
+func TimestampMSMembers(ts *TimestampMS) int64 {
+	return int64(ts.millis)
+}
+
+// NewTimestampNS sets the members of a duckdb_timestamp_ns.
+func NewTimestampNS(nanos int64) *TimestampNS {
+	return &TimestampNS{nanos: C.int64_t(nanos)}
+}
+
+// TimestampNSMembers returns the nanos of a duckdb_timestamp_ns.
+func TimestampNSMembers(ts *TimestampNS) int64 {
+	return int64(ts.nanos)
+}
+
+// NewTimestampStruct sets the members of a duckdb_timestamp_struct.
+func NewTimestampStruct(date DateStruct, ti TimeStruct) *TimestampStruct {
+	return &TimestampStruct{
+		date: date,
+		time: ti,
+	}
+}
+
+// TimestampStructMembers returns the date and time of a duckdb_timestamp_struct.
+func TimestampStructMembers(ts *TimestampStruct) (DateStruct, TimeStruct) {
+	return ts.date, ts.time
 }
 
 // NewInterval sets the members of a duckdb_interval.
@@ -276,6 +369,47 @@ func HugeIntMembers(hi *HugeInt) (uint64, int64) {
 	return uint64(hi.lower), int64(hi.upper)
 }
 
+// NewUHugeInt sets the members of a duckdb_uhugeint.
+func NewUHugeInt(lower uint64, upper uint64) *UHugeInt {
+	return &UHugeInt{
+		lower: C.uint64_t(lower),
+		upper: C.uint64_t(upper),
+	}
+}
+
+// UHugeIntMembers returns the lower and upper of a duckdb_uhugeint.
+func UHugeIntMembers(hi *UHugeInt) (uint64, uint64) {
+	return uint64(hi.lower), uint64(hi.upper)
+}
+
+// NewDecimal sets the members of a duckdb_decimal.
+func NewDecimal(width uint8, scale uint8, hi HugeInt) *Decimal {
+	return &Decimal{
+		width: C.uint8_t(width),
+		scale: C.uint8_t(scale),
+		value: hi,
+	}
+}
+
+// DecimalMembers returns the width, scale, and value of a duckdb_decimal.
+func DecimalMembers(d *Decimal) (uint8, uint8, HugeInt) {
+	return uint8(d.width), uint8(d.scale), d.value
+}
+
+// NewQueryProgressType sets the members of a duckdb_query_progress_type.
+func NewQueryProgressType(percentage float64, rowsProcessed uint64, totalRowsToProcess uint64) *QueryProgressType {
+	return &QueryProgressType{
+		percentage:            C.double(percentage),
+		rows_processed:        C.uint64_t(rowsProcessed),
+		total_rows_to_process: C.uint64_t(totalRowsToProcess),
+	}
+}
+
+// QueryProgressTypeMembers returns the percentage, rows_processed, and total_rows_to_process of a duckdb_query_progress_type.
+func QueryProgressTypeMembers(q *QueryProgressType) (float64, uint64, uint64) {
+	return float64(q.percentage), uint64(q.rows_processed), uint64(q.total_rows_to_process)
+}
+
 // NewListEntry sets the members of a duckdb_list_entry.
 func NewListEntry(offset uint64, length uint64) *ListEntry {
 	return &ListEntry{
@@ -291,7 +425,11 @@ func ListEntryMembers(entry *ListEntry) (uint64, uint64) {
 
 // Types with internal pointers:
 
-// duckdb_column
+// Column wraps duckdb_column.
+// NOTE: Same limitations as Result.
+type Column struct {
+	data C.duckdb_column
+}
 
 // Result wraps duckdb_result.
 // NOTE: Using 'type Result = C.duckdb_result' causes a somewhat mysterious
@@ -331,6 +469,7 @@ type Result struct {
 // See https://github.com/golang/go/issues/28606#issuecomment-2184269962.
 // When using a type alias, duckdb_result itself contains a Go unsafe.Pointer for its 'void *internal_ptr' field.
 
+// TODO:
 // *duckdb_task_state
 
 // Vector wraps *duckdb_vector.
@@ -340,6 +479,15 @@ type Vector struct {
 
 func (vec *Vector) data() C.duckdb_vector {
 	return C.duckdb_vector(vec.Ptr)
+}
+
+// InstanceCache wraps *duckdb_instance_cache.
+type InstanceCache struct {
+	Ptr unsafe.Pointer
+}
+
+func (cache *InstanceCache) data() C.duckdb_instance_cache {
+	return C.duckdb_instance_cache(cache.Ptr)
 }
 
 // Database wraps *duckdb_database.
@@ -423,7 +571,14 @@ func (logicalType *LogicalType) data() C.duckdb_logical_type {
 	return C.duckdb_logical_type(logicalType.Ptr)
 }
 
-// *duckdb_create_type_info
+// CreateTypeInfo wraps *duckdb_create_type_info.
+type CreateTypeInfo struct {
+	Ptr unsafe.Pointer
+}
+
+func (info *CreateTypeInfo) data() C.duckdb_create_type_info {
+	return C.duckdb_create_type_info(info.Ptr)
+}
 
 // DataChunk wraps *duckdb_data_chunk.
 type DataChunk struct {
@@ -452,6 +607,7 @@ func (info *ProfilingInfo) data() C.duckdb_profiling_info {
 	return C.duckdb_profiling_info(info.Ptr)
 }
 
+// TODO:
 // *duckdb_extension_info
 
 // FunctionInfo wraps *duckdb_function_info.
@@ -481,6 +637,7 @@ func (set *ScalarFunctionSet) data() C.duckdb_scalar_function_set {
 	return C.duckdb_scalar_function_set(set.Ptr)
 }
 
+// TODO:
 // *duckdb_aggregate_function
 // *duckdb_aggregate_function_set
 // *duckdb_aggregate_state
@@ -512,6 +669,7 @@ func (info *InitInfo) data() C.duckdb_init_info {
 	return C.duckdb_init_info(info.Ptr)
 }
 
+// TODO:
 // *duckdb_cast_function
 
 // ReplacementScanInfo wraps *duckdb_replacement_scan.
