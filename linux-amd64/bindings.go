@@ -725,7 +725,65 @@ func (array *ArrowArray) data() C.duckdb_arrow_array {
 // Open Connect
 // ------------------------------------------------------------------ //
 
-// duckdb_open
+// CreateInstanceCache wraps duckdb_create_instance_cache.
+// The return value must be destroyed with DestroyInstanceCache.
+func CreateInstanceCache() InstanceCache {
+	cache := C.duckdb_create_instance_cache()
+	if debugMode {
+		allocCounters.cache.Add(1)
+	}
+	return InstanceCache{
+		Ptr: unsafe.Pointer(cache),
+	}
+}
+
+// GetOrCreateFromCache wraps duckdb_get_or_create_from_cache.
+// outDb must be closed with Close.
+func GetOrCreateFromCache(cache InstanceCache, path string, outDb *Database, config Config, errMsg *string) State {
+	cPath := C.CString(path)
+	defer Free(unsafe.Pointer(cPath))
+	var err *C.char
+	defer Free(unsafe.Pointer(err))
+
+	var db C.duckdb_database
+	state := C.duckdb_get_or_create_from_cache(cache.data(), cPath, &db, config.data(), &err)
+	outDb.Ptr = unsafe.Pointer(db)
+	*errMsg = C.GoString(err)
+
+	if debugMode {
+		allocCounters.db.Add(1)
+	}
+	return state
+}
+
+// DestroyInstanceCache wraps duckdb_destroy_instance_cache.
+func DestroyInstanceCache(cache *InstanceCache) {
+	if debugMode {
+		allocCounters.cache.Add(-1)
+	}
+	if cache.Ptr == nil {
+		return
+	}
+	data := cache.data()
+	C.duckdb_destroy_instance_cache(&data)
+	cache.Ptr = nil
+}
+
+// Open wraps duckdb_open.
+// outDb must be closed with Close.
+func Open(path string, outDb *Database) State {
+	cPath := C.CString(path)
+	defer Free(unsafe.Pointer(cPath))
+
+	var db C.duckdb_database
+	state := C.duckdb_open(cPath, &db)
+	outDb.Ptr = unsafe.Pointer(db)
+
+	if debugMode {
+		allocCounters.db.Add(1)
+	}
+	return state
+}
 
 // OpenExt wraps duckdb_open_ext.
 // outDb must be closed with Close.
@@ -775,7 +833,9 @@ func Interrupt(conn Connection) {
 	C.duckdb_interrupt(conn.data())
 }
 
-// duckdb_query_progress
+func QueryProgress(conn Connection) QueryProgressType {
+	return C.duckdb_query_progress(conn.data())
+}
 
 // Disconnect wraps duckdb_disconnect.
 func Disconnect(conn *Connection) {
@@ -790,7 +850,11 @@ func Disconnect(conn *Connection) {
 	conn.Ptr = nil
 }
 
-// duckdb_library_version
+func LibraryVersion() string {
+	cStr := C.duckdb_library_version()
+	defer Free(unsafe.Pointer(cStr))
+	return C.GoString(cStr)
+}
 
 // ------------------------------------------------------------------ //
 // Configuration
@@ -808,8 +872,19 @@ func CreateConfig(outConfig *Config) State {
 	return state
 }
 
-// duckdb_config_count
-// duckdb_get_config_flag
+func ConfigCount() uint64 {
+	return uint64(C.duckdb_config_count())
+}
+
+func GetConfigFlag(index uint64, outName *string, outDescription *string) State {
+	var name *C.char
+	var description *C.char
+
+	state := C.duckdb_get_config_flag(C.size_t(index), &name, &description)
+	*outName = C.GoString(name)
+	*outDescription = C.GoString(description)
+	return state
+}
 
 func SetConfig(config Config, name string, option string) State {
 	cName := C.CString(name)
@@ -836,7 +911,17 @@ func DestroyConfig(config *Config) {
 // Query Execution
 // ------------------------------------------------------------------ //
 
-// duckdb_query
+// Query wraps duckdb_query.
+// outRes must be destroyed with DestroyResult.
+func Query(conn Connection, query string, outRes *Result) State {
+	if debugMode {
+		allocCounters.res.Add(1)
+	}
+	cQuery := C.CString(query)
+	defer Free(unsafe.Pointer(cQuery))
+
+	return C.duckdb_query(conn.data(), cQuery, &outRes.data)
+}
 
 // DestroyResult wraps duckdb_destroy_result.
 func DestroyResult(res *Result) {
@@ -859,7 +944,9 @@ func ColumnType(res *Result, col IdxT) Type {
 	return C.duckdb_column_type(&res.data, col)
 }
 
-// duckdb_result_statement_type
+func ResultStatementType(res Result) StatementType {
+	return C.duckdb_result_statement_type(res.data)
+}
 
 // ColumnLogicalType wraps duckdb_column_logical_type.
 // The return value must be destroyed with DestroyLogicalType.
@@ -877,20 +964,26 @@ func ColumnCount(res *Result) IdxT {
 	return C.duckdb_column_count(&res.data)
 }
 
-// duckdb_rows_changed
+func RowsChanged(res *Result) IdxT {
+	return C.duckdb_rows_changed(&res.data)
+}
 
 func ResultError(res *Result) string {
 	err := C.duckdb_result_error(&res.data)
 	return C.GoString(err)
 }
 
-// duckdb_result_error_type
+func ResultErrorType(res *Result) ErrorType {
+	return C.duckdb_result_error_type(&res.data)
+}
 
 // ------------------------------------------------------------------ //
 // Result Functions (many are deprecated)
 // ------------------------------------------------------------------ //
 
-// duckdb_result_return_type
+func ResultReturnType(res Result) ResultType {
+	return C.duckdb_result_return_type(res.data)
+}
 
 // ------------------------------------------------------------------ //
 // Safe Fetch Functions (all deprecated)
@@ -900,6 +993,7 @@ func ResultError(res *Result) string {
 // Helpers
 // ------------------------------------------------------------------ //
 
+// TODO:
 // duckdb_malloc
 
 func Free(ptr unsafe.Pointer) {
@@ -2602,6 +2696,7 @@ func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
 // ------------------------------------------------------------------ //
 
 type allocationCounters struct {
+	cache          atomic.Int64
 	db             atomic.Int64
 	conn           atomic.Int64
 	config         atomic.Int64
@@ -2623,6 +2718,10 @@ type allocationCounters struct {
 var allocCounters = allocationCounters{}
 
 func VerifyAllocationCounters() {
+	cacheCount := allocCounters.cache.Load()
+	if cacheCount != 0 {
+		log.Panicf("cache count is %d", cacheCount)
+	}
 	dbCount := allocCounters.db.Load()
 	if dbCount != 0 {
 		log.Panicf("db count is %d", dbCount)
