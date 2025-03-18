@@ -1028,6 +1028,22 @@ func ResultErrorType(res *Result) ErrorType {
 // Result Functions (many are deprecated)
 // ------------------------------------------------------------------ //
 
+// ResultGetChunk wraps duckdb_result_get_chunk.
+// The return value must be destroyed with DestroyDataChunk.
+func ResultGetChunk(res Result, index IdxT) DataChunk {
+	chunk := C.duckdb_result_get_chunk(res.data, index)
+	if debugMode {
+		allocCounters.chunk.Add(1)
+	}
+	return DataChunk{
+		Ptr: unsafe.Pointer(chunk),
+	}
+}
+
+func ResultChunkCount(res Result) IdxT {
+	return C.duckdb_result_chunk_count(res.data)
+}
+
 func ResultReturnType(res Result) ResultType {
 	return C.duckdb_result_return_type(res.data)
 }
@@ -1035,6 +1051,11 @@ func ResultReturnType(res Result) ResultType {
 // ------------------------------------------------------------------ //
 // Safe Fetch Functions (all deprecated)
 // ------------------------------------------------------------------ //
+
+func ValueInt64(res *Result, col IdxT, row IdxT) int64 {
+	v := C.duckdb_value_int64(&res.data, col, row)
+	return int64(v)
+}
 
 // ------------------------------------------------------------------ //
 // Helpers
@@ -1986,7 +2007,7 @@ func GetVarchar(v Value) string {
 // CreateStructValue wraps duckdb_create_struct_value.
 // The return value must be destroyed with DestroyValue.
 func CreateStructValue(logicalType LogicalType, values []Value) Value {
-	s := allocValueSlice(values)
+	s := allocValues(values)
 	defer Free(s)
 	valuesPtr := (*C.duckdb_value)(s)
 
@@ -2003,7 +2024,7 @@ func CreateStructValue(logicalType LogicalType, values []Value) Value {
 // The return value must be destroyed with DestroyValue.
 func CreateListValue(logicalType LogicalType, values []Value) Value {
 	count := IdxT(len(values))
-	s := allocValueSlice(values)
+	s := allocValues(values)
 	defer Free(s)
 	valuesPtr := (*C.duckdb_value)(s)
 
@@ -2020,7 +2041,7 @@ func CreateListValue(logicalType LogicalType, values []Value) Value {
 // The return value must be destroyed with DestroyValue.
 func CreateArrayValue(logicalType LogicalType, values []Value) Value {
 	count := IdxT(len(values))
-	s := allocValueSlice(values)
+	s := allocValues(values)
 	defer Free(s)
 	valuesPtr := (*C.duckdb_value)(s)
 
@@ -2143,7 +2164,11 @@ func LogicalTypeGetAlias(logicalType LogicalType) string {
 	return C.GoString(alias)
 }
 
-// duckdb_logical_type_set_alias
+func LogicalTypeSetAlias(logicalType LogicalType, alias string) {
+	cAlias := C.CString(alias)
+	defer Free(unsafe.Pointer(cAlias))
+	C.duckdb_logical_type_set_alias(logicalType.data(), cAlias)
+}
 
 // CreateListType wraps duckdb_create_list_type.
 // The return value must be destroyed with DestroyLogicalType.
@@ -2181,27 +2206,47 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 	}
 }
 
-// duckdb_create_union_type
+// CreateUnionType wraps duckdb_create_union_type.
+// The return value must be destroyed with DestroyLogicalType.
+func CreateUnionType(types []LogicalType, names []string) LogicalType {
+	t := allocLogicalTypes(types)
+	defer Free(t)
+	typesPtr := (*C.duckdb_logical_type)(t)
+
+	n := allocNames(names)
+	defer Free(n)
+	namesSlice := (*[1 << 31]*C.char)(n)
+	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+
+	// Create the STRUCT type.
+	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, IdxT(len(types)))
+	for i := 0; i < len(types); i++ {
+		Free(unsafe.Pointer((*namesSlice)[i]))
+	}
+
+	if debugMode {
+		allocCounters.logicalType.Add(1)
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
 
 // CreateStructType wraps duckdb_create_struct_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	count := len(types)
+	t := allocLogicalTypes(types)
+	defer Free(t)
+	typesPtr := (*C.duckdb_logical_type)(t)
 
-	s := allocLogicalTypeSlice(types)
-	defer Free(s)
-	typesPtr := (*C.duckdb_logical_type)(s)
-
-	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
-	defer Free(unsafe.Pointer(namesSlice))
-	for i, name := range names {
-		(*namesSlice)[i] = C.CString(name)
-	}
+	n := allocNames(names)
+	defer Free(n)
+	namesSlice := (*[1 << 31]*C.char)(n)
 	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
 
 	// Create the STRUCT type.
-	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, IdxT(count))
-	for i := 0; i < count; i++ {
+	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, IdxT(len(types)))
+	for i := 0; i < len(types); i++ {
 		Free(unsafe.Pointer((*namesSlice)[i]))
 	}
 
@@ -2216,18 +2261,14 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 // CreateEnumType wraps duckdb_create_enum_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateEnumType(names []string) LogicalType {
-	count := len(names)
-
-	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
-	defer Free(unsafe.Pointer(namesSlice))
-	for i, name := range names {
-		(*namesSlice)[i] = C.CString(name)
-	}
+	n := allocNames(names)
+	defer Free(n)
+	namesSlice := (*[1 << 31]*C.char)(n)
 	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
 
 	// Create the ENUM type.
-	logicalType := C.duckdb_create_enum_type(namesPtr, IdxT(count))
-	for i := 0; i < count; i++ {
+	logicalType := C.duckdb_create_enum_type(namesPtr, IdxT(len(names)))
+	for i := 0; i < len(names); i++ {
 		Free(unsafe.Pointer((*namesSlice)[i]))
 	}
 
@@ -2358,9 +2399,27 @@ func StructTypeChildType(logicalType LogicalType, index IdxT) LogicalType {
 	}
 }
 
-// duckdb_union_type_member_count
-// duckdb_union_type_member_name
-// duckdb_union_type_member_type
+func UnionTypeMemberCount(logicalType LogicalType) IdxT {
+	return C.duckdb_union_type_member_count(logicalType.data())
+}
+
+func UnionTypeMemberName(logicalType LogicalType, index IdxT) string {
+	cStr := C.duckdb_union_type_member_name(logicalType.data(), index)
+	defer Free(unsafe.Pointer(cStr))
+	return C.GoString(cStr)
+}
+
+// UnionTypeMemberType wraps duckdb_union_type_member_type.
+// The return value must be destroyed with DestroyLogicalType.
+func UnionTypeMemberType(logicalType LogicalType, index IdxT) LogicalType {
+	t := C.duckdb_union_type_member_type(logicalType.data(), index)
+	if debugMode {
+		allocCounters.logicalType.Add(1)
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(t),
+	}
+}
 
 // DestroyLogicalType wraps duckdb_destroy_logical_type.
 func DestroyLogicalType(logicalType *LogicalType) {
@@ -2375,7 +2434,9 @@ func DestroyLogicalType(logicalType *LogicalType) {
 	logicalType.Ptr = nil
 }
 
-// duckdb_register_logical_type
+func RegisterLogicalType(conn Connection, logicalType LogicalType, info CreateTypeInfo) State {
+	return C.duckdb_register_logical_type(conn.data(), logicalType.data(), info.data())
+}
 
 // ------------------------------------------------------------------ //
 // Data Chunk Interface
@@ -2386,7 +2447,7 @@ func DestroyLogicalType(logicalType *LogicalType) {
 func CreateDataChunk(types []LogicalType) DataChunk {
 	count := len(types)
 
-	s := allocLogicalTypeSlice(types)
+	s := allocLogicalTypes(types)
 	typesPtr := (*C.duckdb_logical_type)(s)
 	defer Free(unsafe.Pointer(typesPtr))
 
@@ -2412,7 +2473,9 @@ func DestroyDataChunk(chunk *DataChunk) {
 	chunk.Ptr = nil
 }
 
-// duckdb_data_chunk_reset
+func DataChunkReset(chunk DataChunk) {
+	C.duckdb_data_chunk_reset(chunk.data())
+}
 
 func DataChunkGetColumnCount(chunk DataChunk) IdxT {
 	return C.duckdb_data_chunk_get_column_count(chunk.data())
@@ -2512,15 +2575,25 @@ func ArrayVectorGetChild(vec Vector) Vector {
 // Validity Mask Functions
 // ------------------------------------------------------------------ //
 
-// duckdb_validity_row_is_valid
-// duckdb_validity_set_row_validity
+func ValidityRowIsValid(maskPtr unsafe.Pointer, row IdxT) bool {
+	mask := (*C.uint64_t)(maskPtr)
+	return bool(C.duckdb_validity_row_is_valid(mask, row))
+}
+
+func ValiditySetRowValidity(maskPtr unsafe.Pointer, row IdxT, valid bool) {
+	mask := (*C.uint64_t)(maskPtr)
+	C.duckdb_validity_set_row_validity(mask, row, C.bool(valid))
+}
 
 func ValiditySetRowInvalid(maskPtr unsafe.Pointer, row IdxT) {
 	mask := (*C.uint64_t)(maskPtr)
 	C.duckdb_validity_set_row_invalid(mask, row)
 }
 
-// duckdb_validity_set_row_valid
+func ValiditySetRowValid(maskPtr unsafe.Pointer, row IdxT) {
+	mask := (*C.uint64_t)(maskPtr)
+	C.duckdb_validity_set_row_valid(mask, row)
+}
 
 // ------------------------------------------------------------------ //
 // Scalar Functions
@@ -2642,6 +2715,7 @@ func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 // Aggregate Functions
 // ------------------------------------------------------------------ //
 
+// TODO:
 // duckdb_create_aggregate_function
 // duckdb_destroy_aggregate_function
 // duckdb_aggregate_function_set_name
@@ -2752,7 +2826,9 @@ func BindAddResultColumn(info BindInfo, name string, logicalType LogicalType) {
 	C.duckdb_bind_add_result_column(info.data(), cName, logicalType.data())
 }
 
-// duckdb_bind_get_parameter_count
+func BindGetParameterCount(info BindInfo) IdxT {
+	return C.duckdb_bind_get_parameter_count(info.data())
+}
 
 // BindGetParameter wraps duckdb_bind_get_parameter.
 // The return value must be destroyed with DestroyValue.
@@ -2799,7 +2875,10 @@ func BindSetError(info BindInfo, err string) {
 // Table Function Init
 // ------------------------------------------------------------------ //
 
-// duckdb_init_get_extra_info
+func InitGetExtraInfo(info InitInfo) unsafe.Pointer {
+	ptr := C.duckdb_init_get_extra_info(info.data())
+	return unsafe.Pointer(ptr)
+}
 
 func InitGetBindData(info InitInfo) unsafe.Pointer {
 	ptr := C.duckdb_init_get_bind_data(info.data())
@@ -2823,20 +2902,30 @@ func InitSetMaxThreads(info InitInfo, max IdxT) {
 	C.duckdb_init_set_max_threads(info.data(), max)
 }
 
-// duckdb_init_set_error
+func InitSetError(info InitInfo, err string) {
+	cStr := C.CString(err)
+	defer Free(unsafe.Pointer(cStr))
+	C.duckdb_init_set_error(info.data(), cStr)
+}
 
 // ------------------------------------------------------------------ //
 // Table Function
 // ------------------------------------------------------------------ //
 
-// duckdb_function_get_extra_info
+func FunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_extra_info(info.data())
+	return unsafe.Pointer(ptr)
+}
 
 func FunctionGetBindData(info FunctionInfo) unsafe.Pointer {
 	ptr := C.duckdb_function_get_bind_data(info.data())
 	return unsafe.Pointer(ptr)
 }
 
-// duckdb_function_get_init_data
+func FunctionGetInitData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_function_get_init_data(info.data())
+	return unsafe.Pointer(ptr)
+}
 
 func FunctionGetLocalInitData(info FunctionInfo) unsafe.Pointer {
 	ptr := C.duckdb_function_get_local_init_data(info.data())
@@ -2886,7 +2975,20 @@ func GetProfilingInfo(conn Connection) ProfilingInfo {
 	}
 }
 
-// duckdb_profiling_info_get_value
+// ProfilingInfoGetValue wraps duckdb_profiling_info_get_value.
+// The return value must be destroyed with DestroyValue.
+func ProfilingInfoGetValue(info ProfilingInfo, key string) Value {
+	cKey := C.CString(key)
+	defer Free(unsafe.Pointer(cKey))
+	v := C.duckdb_profiling_info_get_value(info.data(), cKey)
+
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 // ProfilingInfoGetMetrics wraps duckdb_profiling_info_get_metrics.
 // The return value must be destroyed with DestroyValue.
@@ -3004,9 +3106,16 @@ func AppenderClearColumns(appender Appender) State {
 	return C.duckdb_appender_clear_columns(appender.data())
 }
 
+// TODO:
 // duckdb_appender_begin_row
 // duckdb_appender_end_row
 // duckdb_append_default
+
+func AppendDefaultToChunk(appender Appender, chunk DataChunk, col IdxT, row IdxT) State {
+	return C.duckdb_append_default_to_chunk(appender.data(), chunk.data(), col, row)
+}
+
+// TODO:
 // duckdb_append_bool
 // duckdb_append_int8
 // duckdb_append_int16
@@ -3038,7 +3147,22 @@ func AppendDataChunk(appender Appender, chunk DataChunk) State {
 // Table Description
 // ------------------------------------------------------------------ //
 
-// duckdb_table_description_create
+// TableDescriptionCreate wraps duckdb_table_description_create.
+// outDesc must be destroyed with TableDescriptionDestroy.
+func TableDescriptionCreate(conn Connection, schema string, table string, outDesc *TableDescription) State {
+	cSchema := C.CString(schema)
+	defer Free(unsafe.Pointer(cSchema))
+	cTable := C.CString(table)
+	defer Free(unsafe.Pointer(cTable))
+
+	var description C.duckdb_table_description
+	state := C.duckdb_table_description_create(conn.data(), cSchema, cTable, &description)
+	outDesc.Ptr = unsafe.Pointer(description)
+	if debugMode {
+		allocCounters.tableDesc.Add(1)
+	}
+	return state
+}
 
 // TableDescriptionCreateExt wraps duckdb_table_description_create_ext.
 // outDesc must be destroyed with TableDescriptionDestroy.
@@ -3090,96 +3214,18 @@ func TableDescriptionGetColumnName(desc TableDescription, index IdxT) string {
 	return C.GoString(cName)
 }
 
-//===--------------------------------------------------------------------===//
-// Threading Information
-//===--------------------------------------------------------------------===//
-
-// duckdb_execute_tasks
-// duckdb_create_task_state
-// duckdb_execute_tasks_state
-// duckdb_execute_n_tasks_state
-// duckdb_finish_execution
-// duckdb_task_state_is_finished
-// duckdb_destroy_task_state
-// duckdb_execution_is_finished
-// duckdb_fetch_chunk
-// duckdb_create_cast_function
-// duckdb_cast_function_set_source_type
-// duckdb_cast_function_set_target_type
-// duckdb_cast_function_set_implicit_cast_cost
-// duckdb_cast_function_set_function
-// duckdb_cast_function_set_extra_info
-// duckdb_cast_function_get_extra_info
-// duckdb_cast_function_get_cast_mode
-// duckdb_cast_function_set_error
-// duckdb_cast_function_set_row_error
-// duckdb_register_cast_function
-// duckdb_destroy_cast_function
-
-// duckdb_row_count
-// duckdb_column_data
-// duckdb_nullmask_data
-
-// ResultGetChunk wraps duckdb_result_get_chunk.
-// The return value must be destroyed with DestroyDataChunk.
-func ResultGetChunk(res Result, index IdxT) DataChunk {
-	chunk := C.duckdb_result_get_chunk(res.data, index)
-	if debugMode {
-		allocCounters.chunk.Add(1)
-	}
-	return DataChunk{
-		Ptr: unsafe.Pointer(chunk),
-	}
-}
-
-// duckdb_result_is_streaming
-
-func ResultChunkCount(res Result) IdxT {
-	return C.duckdb_result_chunk_count(res.data)
-}
-
-// duckdb_value_boolean
-// duckdb_value_int8
-// duckdb_value_int16
-// duckdb_value_int32
-
-func ValueInt64(res *Result, col IdxT, row IdxT) int64 {
-	v := C.duckdb_value_int64(&res.data, col, row)
-	return int64(v)
-}
-
-// duckdb_value_hugeint
-// duckdb_value_uhugeint
-// duckdb_value_decimal
-// duckdb_value_uint8
-// duckdb_value_uint16
-// duckdb_value_uint32
-// duckdb_value_uint64
-// duckdb_value_float
-// duckdb_value_double
-// duckdb_value_date
-// duckdb_value_time
-// duckdb_value_timestamp
-// duckdb_value_interval
-// duckdb_value_varchar
-// duckdb_value_string
-// duckdb_value_varchar_internal
-// duckdb_value_string_internal
-// duckdb_value_blob
-// duckdb_value_is_null
-// duckdb_execute_prepared_streaming
-// duckdb_pending_prepared_streaming
-
 // ------------------------------------------------------------------ //
-// Arrow Interface
+// Arrow Interface (entire interface has deprecation notice)
 // ------------------------------------------------------------------ //
 
+// TODO:
 // duckdb_query_arrow
 
 func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
 	return C.duckdb_query_arrow_schema(arrow.data(), (*C.duckdb_arrow_schema)(outSchema.Ptr))
 }
 
+// TODO:
 // duckdb_prepared_arrow_schema
 // duckdb_result_arrow_array
 
@@ -3187,12 +3233,14 @@ func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
 	return C.duckdb_query_arrow_array(arrow.data(), (*C.duckdb_arrow_array)(outArray.Ptr))
 }
 
+// TODO:
 // duckdb_arrow_column_count
 
 func ArrowRowCount(arrow Arrow) IdxT {
 	return C.duckdb_arrow_row_count(arrow.data())
 }
 
+// TODO:
 // duckdb_arrow_rows_changed
 
 func QueryArrowError(arrow Arrow) string {
@@ -3213,6 +3261,7 @@ func DestroyArrow(arrow *Arrow) {
 	arrow.Ptr = nil
 }
 
+// TODO:
 // duckdb_destroy_arrow_stream
 
 // ExecutePreparedArrow wraps duckdb_execute_prepared_arrow.
@@ -3233,14 +3282,48 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 	return C.duckdb_arrow_scan(conn.data(), cTable, stream.data())
 }
 
+// TODO:
 // duckdb_arrow_array_scan
-// duckdb_stream_fetch_chunk
 
-// duckdb_create_instance_cache
-// duckdb_get_or_create_from_cache
-// duckdb_destroy_instance_cache
+//===--------------------------------------------------------------------===//
+// Threading Information
+//===--------------------------------------------------------------------===//
 
-// duckdb_append_default_to_chunk
+// TODO:
+// duckdb_execute_tasks
+// duckdb_create_task_state
+// duckdb_execute_tasks_state
+// duckdb_execute_n_tasks_state
+// duckdb_finish_execution
+// duckdb_task_state_is_finished
+// duckdb_destroy_task_state
+// duckdb_execution_is_finished
+
+//===--------------------------------------------------------------------===//
+// Streaming Result Interface
+//===--------------------------------------------------------------------===//
+
+// TODO:
+// duckdb_stream_fetch_chunk (deprecation notice)
+// duckdb_fetch_chunk
+
+//===--------------------------------------------------------------------===//
+// Cast Functions
+//===--------------------------------------------------------------------===//
+
+// TODO:
+// duckdb_create_cast_function
+// duckdb_cast_function_set_source_type
+// duckdb_cast_function_set_target_type
+// duckdb_cast_function_set_implicit_cast_cost
+// duckdb_cast_function_set_function
+// duckdb_cast_function_set_extra_info
+// duckdb_cast_function_get_extra_info
+// duckdb_cast_function_get_cast_mode
+// duckdb_cast_function_set_error
+// duckdb_cast_function_set_row_error
+// duckdb_register_cast_function
+// duckdb_destroy_cast_function
 
 // ------------------------------------------------------------------ //
 // Go Bindings Helper
@@ -3260,7 +3343,8 @@ const (
 	charSize        = C.size_t(unsafe.Sizeof((*C.char)(nil)))
 )
 
-func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
+// The return value must be freed with Free.
+func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
 	count := len(types)
 	s := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
 	for i, t := range types {
@@ -3268,10 +3352,12 @@ func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
 		// The memory is allocated in the types slice.
 		(*s)[i] = t.data()
 	}
+
 	return unsafe.Pointer(s)
 }
 
-func allocValueSlice(values []Value) unsafe.Pointer {
+// The return value must be freed with Free.
+func allocValues(values []Value) unsafe.Pointer {
 	count := len(values)
 	s := (*[1 << 31]C.duckdb_value)(C.malloc(C.size_t(count) * valueSize))
 	for i, val := range values {
@@ -3279,6 +3365,19 @@ func allocValueSlice(values []Value) unsafe.Pointer {
 		// The memory is allocated in the values slice.
 		(*s)[i] = val.data()
 	}
+
+	return unsafe.Pointer(s)
+}
+
+// The return value must be freed with Free.
+// The names must also be freed.
+func allocNames(names []string) unsafe.Pointer {
+	count := len(names)
+	s := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	for i, name := range names {
+		(*s)[i] = C.CString(name)
+	}
+
 	return unsafe.Pointer(s)
 }
 
