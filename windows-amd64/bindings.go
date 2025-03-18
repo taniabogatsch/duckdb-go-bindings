@@ -206,13 +206,22 @@ type (
 	// Use the respective StringT functions to access / write to this type.
 	StringT   = C.duckdb_string_t
 	ListEntry = C.duckdb_list_entry
+	// Blob does not export New and Members.
+	// Use the respective Blob functions to access / write to this type.
+	// This type must be destroyed with DestroyBlob.
+	Blob = C.duckdb_blob
+	// Bit does not export New and Members.
+	// Use the respective Bit functions to access / write to this type.
+	// This type must be destroyed with DestroyBit.
+	Bit = C.duckdb_bit
+	// VarInt does not export New and Members.
+	// Use the respective VarInt functions to access / write to this type.
+	// This type must be destroyed with DestroyVarInt.
+	VarInt = C.duckdb_varint
 )
 
 // TODO:
 // duckdb_string
-// duckdb_blob
-// duckdb_bit
-// duckdb_varint
 // duckdb_extension_access
 
 // Helper functions for types without internal pointers:
@@ -421,6 +430,44 @@ func NewListEntry(offset uint64, length uint64) *ListEntry {
 // ListEntryMembers returns the offset and length of a duckdb_list_entry.
 func ListEntryMembers(entry *ListEntry) (uint64, uint64) {
 	return uint64(entry.offset), uint64(entry.length)
+}
+
+// Helper functions for types with internal fields that need freeing:
+
+// DestroyBlob destroys the data field of duckdb_blob.
+func DestroyBlob(b *Blob) {
+	if debugMode {
+		allocCounters.blob.Add(-1)
+	}
+	if b == nil {
+		return
+	}
+	Free(unsafe.Pointer(b.data))
+	b = nil
+}
+
+// DestroyBit destroys the data field of duckdb_bit.
+func DestroyBit(b *Bit) {
+	if debugMode {
+		allocCounters.bit.Add(-1)
+	}
+	if b == nil {
+		return
+	}
+	Free(unsafe.Pointer(b.data))
+	b = nil
+}
+
+// DestroyVarInt destroys the data field of duckdb_varint.
+func DestroyVarInt(i *VarInt) {
+	if debugMode {
+		allocCounters.varInt.Add(-1)
+	}
+	if i == nil {
+		return
+	}
+	Free(unsafe.Pointer(i.data))
+	i = nil
 }
 
 // Types with internal pointers:
@@ -1028,9 +1075,17 @@ func FromDate(date Date) DateStruct {
 	return C.duckdb_from_date(date)
 }
 
-// duckdb_to_date
-// duckdb_is_finite_date
-// duckdb_from_time
+func ToDate(date DateStruct) Date {
+	return C.duckdb_to_date(date)
+}
+
+func IsFiniteDate(date Date) bool {
+	return bool(C.duckdb_is_finite_date(date))
+}
+
+func FromTime(ti Time) TimeStruct {
+	return C.duckdb_from_time(ti)
+}
 
 func CreateTimeTZ(micros int64, offset int32) TimeTZ {
 	return C.duckdb_create_time_tz(C.int64_t(micros), C.int32_t(offset))
@@ -1040,40 +1095,88 @@ func FromTimeTZ(ti TimeTZ) TimeTZStruct {
 	return C.duckdb_from_time_tz(ti)
 }
 
-// duckdb_to_time
-// duckdb_from_timestamp
-// duckdb_to_timestamp
-// duckdb_is_finite_timestamp
-// duckdb_is_finite_timestamp_s
-// duckdb_is_finite_timestamp_ms
-// duckdb_is_finite_timestamp_ns
+func ToTime(ti TimeStruct) Time {
+	return C.duckdb_to_time(ti)
+}
+
+func FromTimestamp(ts Timestamp) TimestampStruct {
+	return C.duckdb_from_timestamp(ts)
+}
+
+func ToTimestamp(ts TimestampStruct) Timestamp {
+	return C.duckdb_to_timestamp(ts)
+}
+
+func IsFiniteTimestamp(ts Timestamp) bool {
+	return bool(C.duckdb_is_finite_timestamp(ts))
+}
+
+func IsFiniteTimestampS(ts TimestampS) bool {
+	return bool(C.duckdb_is_finite_timestamp_s(ts))
+}
+
+func IsFiniteTimestampMS(ts TimestampMS) bool {
+	return bool(C.duckdb_is_finite_timestamp_ms(ts))
+}
+
+func IsFiniteTimestampNS(ts TimestampNS) bool {
+	return bool(C.duckdb_is_finite_timestamp_ns(ts))
+}
 
 // ------------------------------------------------------------------ //
 // Hugeint Helpers
 // ------------------------------------------------------------------ //
 
-// duckdb_hugeint_to_double
-// duckdb_double_to_hugeint
+func HugeIntToDouble(hi HugeInt) float64 {
+	return float64(C.duckdb_hugeint_to_double(hi))
+}
+
+func DoubleToHugeInt(d float64) HugeInt {
+	return C.duckdb_double_to_hugeint(C.double(d))
+}
 
 // ------------------------------------------------------------------ //
 // Unsigned Hugeint Helpers
 // ------------------------------------------------------------------ //
 
-// duckdb_uhugeint_to_double
-// duckdb_double_to_uhugeint
+func UHugeIntToDouble(hi UHugeInt) float64 {
+	return float64(C.duckdb_uhugeint_to_double(hi))
+}
+
+func DoubleToUHugeInt(d float64) UHugeInt {
+	return C.duckdb_double_to_uhugeint(C.double(d))
+}
 
 // ------------------------------------------------------------------ //
 // Decimal Helpers
 // ------------------------------------------------------------------ //
 
-// duckdb_double_to_decimal
-// duckdb_decimal_to_double
+func DoubleToDecimal(d float64, width uint8, scale uint8) Decimal {
+	return C.duckdb_double_to_decimal(C.double(d), C.uint8_t(width), C.uint8_t(scale))
+}
+
+func DecimalToDouble(d Decimal) float64 {
+	return float64(C.duckdb_decimal_to_double(d))
+}
 
 // ------------------------------------------------------------------ //
 // Prepared Statements
 // ------------------------------------------------------------------ //
 
-// duckdb_prepare
+// Prepare wraps duckdb_prepare.
+// outPreparedStmt must be destroyed with DestroyPrepare.
+func Prepare(conn Connection, query string, outPreparedStmt *PreparedStatement) State {
+	cQuery := C.CString(query)
+	defer Free(unsafe.Pointer(cQuery))
+
+	var preparedStmt C.duckdb_prepared_statement
+	state := C.duckdb_prepare(conn.data(), cQuery, &preparedStmt)
+	outPreparedStmt.Ptr = unsafe.Pointer(preparedStmt)
+	if debugMode {
+		allocCounters.preparedStmt.Add(1)
+	}
+	return state
+}
 
 // DestroyPrepare wraps duckdb_destroy_prepare.
 func DestroyPrepare(preparedStmt *PreparedStatement) {
@@ -1107,8 +1210,21 @@ func ParamType(preparedStmt PreparedStatement, index IdxT) Type {
 	return C.duckdb_param_type(preparedStmt.data(), index)
 }
 
-// duckdb_param_logical_type
-// duckdb_clear_bindings
+// ParamLogicalType wraps duckdb_param_logical_type.
+// The return value must be destroyed with DestroyLogicalType.
+func ParamLogicalType(preparedStmt PreparedStatement, index IdxT) LogicalType {
+	logicalType := C.duckdb_param_logical_type(preparedStmt.data(), index)
+	if debugMode {
+		allocCounters.logicalType.Add(1)
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+func ClearBindings(preparedStmt PreparedStatement) State {
+	return C.duckdb_clear_bindings(preparedStmt.data())
+}
 
 func PreparedStatementType(preparedStmt PreparedStatement) StatementType {
 	return C.duckdb_prepared_statement_type(preparedStmt.data())
@@ -1122,7 +1238,11 @@ func BindValue(preparedStmt PreparedStatement, index IdxT, v Value) State {
 	return C.duckdb_bind_value(preparedStmt.data(), index, v.data())
 }
 
-// duckdb_bind_parameter_index
+func BindParameterIndex(preparedStmt PreparedStatement, outIndex *IdxT, name string) State {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	return C.duckdb_bind_parameter_index(preparedStmt.data(), outIndex, cName)
+}
 
 func BindBoolean(preparedStmt PreparedStatement, index IdxT, v bool) State {
 	return C.duckdb_bind_boolean(preparedStmt.data(), index, C.bool(v))
@@ -1148,7 +1268,9 @@ func BindHugeInt(preparedStmt PreparedStatement, index IdxT, v HugeInt) State {
 	return C.duckdb_bind_hugeint(preparedStmt.data(), index, v)
 }
 
-// duckdb_bind_uhugeint
+func BindUHugeInt(preparedStmt PreparedStatement, index IdxT, v UHugeInt) State {
+	return C.duckdb_bind_uhugeint(preparedStmt.data(), index, v)
+}
 
 func BindDecimal(preparedStmt PreparedStatement, index IdxT, v Decimal) State {
 	return C.duckdb_bind_decimal(preparedStmt.data(), index, v)
@@ -1190,7 +1312,9 @@ func BindTimestamp(preparedStmt PreparedStatement, index IdxT, v Timestamp) Stat
 	return C.duckdb_bind_timestamp(preparedStmt.data(), index, v)
 }
 
-// duckdb_bind_timestamp_tz
+func BindTimestampTZ(preparedStmt PreparedStatement, index IdxT, v Timestamp) State {
+	return C.duckdb_bind_timestamp_tz(preparedStmt.data(), index, v)
+}
 
 func BindInterval(preparedStmt PreparedStatement, index IdxT, v Interval) State {
 	return C.duckdb_bind_interval(preparedStmt.data(), index, v)
@@ -1202,7 +1326,11 @@ func BindVarchar(preparedStmt PreparedStatement, index IdxT, v string) State {
 	return C.duckdb_bind_varchar(preparedStmt.data(), index, cStr)
 }
 
-// duckdb_bind_varchar_length
+func BindVarcharLength(preparedStmt PreparedStatement, index IdxT, v string, length IdxT) State {
+	cStr := C.CString(v)
+	defer Free(unsafe.Pointer(cStr))
+	return C.duckdb_bind_varchar_length(preparedStmt.data(), index, cStr, length)
+}
 
 func BindBlob(preparedStmt PreparedStatement, index IdxT, v []byte) State {
 	cBytes := C.CBytes(v)
@@ -1218,7 +1346,14 @@ func BindNull(preparedStmt PreparedStatement, index IdxT) State {
 // Execute Prepared Statements (many are deprecated)
 // ------------------------------------------------------------------ //
 
-// duckdb_execute_prepared
+// ExecutePrepared wraps duckdb_execute_prepared.
+// outRes must be destroyed with DestroyResult.
+func ExecutePrepared(preparedStmt PreparedStatement, outRes *Result) State {
+	if debugMode {
+		allocCounters.res.Add(1)
+	}
+	return C.duckdb_execute_prepared(preparedStmt.data(), &outRes.data)
+}
 
 // ------------------------------------------------------------------ //
 // Extract Statements
@@ -1303,8 +1438,13 @@ func PendingError(pendingRes PendingResult) string {
 	return C.GoString(err)
 }
 
-// duckdb_pending_execute_task
-// duckdb_pending_execute_check_state
+func PendingExecuteTask(pendingRes PendingResult) PendingState {
+	return C.duckdb_pending_execute_task(pendingRes.data())
+}
+
+func PendingExecuteCheckState(pendingRes PendingResult) PendingState {
+	return C.duckdb_pending_execute_check_state(pendingRes.data())
+}
 
 // ExecutePending wraps duckdb_execute_pending.
 // outRes must be destroyed with DestroyResult.
@@ -1315,7 +1455,9 @@ func ExecutePending(res PendingResult, outRes *Result) State {
 	return C.duckdb_execute_pending(res.data(), &outRes.data)
 }
 
-// duckdb_pending_execution_is_finished
+func PendingExecutionIsFinished(state PendingState) bool {
+	return bool(C.duckdb_pending_execution_is_finished(state))
+}
 
 // ------------------------------------------------------------------ //
 // Value Interface
@@ -1348,15 +1490,115 @@ func CreateVarchar(str string) Value {
 	}
 }
 
-// duckdb_create_varchar_length
-// duckdb_create_bool
-// duckdb_create_int8
-// duckdb_create_uint8
-// duckdb_create_int16
-// duckdb_create_uint16
-// duckdb_create_int32
-// duckdb_create_uint32
-// duckdb_create_uint64
+// CreateVarcharLength wraps duckdb_create_varchar_length.
+// The return value must be destroyed with DestroyValue.
+func CreateVarcharLength(str string, length IdxT) Value {
+	cStr := C.CString(str)
+	defer Free(unsafe.Pointer(cStr))
+	v := C.duckdb_create_varchar_length(cStr, length)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateBool wraps duckdb_create_bool.
+// The return value must be destroyed with DestroyValue.
+func CreateBool(val bool) Value {
+	v := C.duckdb_create_bool(C.bool(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateInt8 wraps duckdb_create_int8.
+// The return value must be destroyed with DestroyValue.
+func CreateInt8(val int8) Value {
+	v := C.duckdb_create_int8(C.int8_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUInt8 wraps duckdb_create_uint8.
+// The return value must be destroyed with DestroyValue.
+func CreateUInt8(val uint8) Value {
+	v := C.duckdb_create_uint8(C.uint8_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateInt16 wraps duckdb_create_int16.
+// The return value must be destroyed with DestroyValue.
+func CreateInt16(val int16) Value {
+	v := C.duckdb_create_int16(C.int16_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUInt16 wraps duckdb_create_uint16.
+// The return value must be destroyed with DestroyValue.
+func CreateUInt16(val uint16) Value {
+	v := C.duckdb_create_uint16(C.uint16_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateInt32 wraps duckdb_create_int32.
+// The return value must be destroyed with DestroyValue.
+func CreateInt32(val int32) Value {
+	v := C.duckdb_create_int32(C.int32_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUInt32 wraps duckdb_create_uint32.
+// The return value must be destroyed with DestroyValue.
+func CreateUInt32(val uint32) Value {
+	v := C.duckdb_create_uint32(C.uint32_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUInt64 wraps duckdb_create_uint64.
+// The return value must be destroyed with DestroyValue.
+func CreateUInt64(val uint64) Value {
+	v := C.duckdb_create_uint64(C.uint64_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 // CreateInt64 wraps duckdb_create_int64.
 // The return value must be destroyed with DestroyValue.
@@ -1370,14 +1612,101 @@ func CreateInt64(val int64) Value {
 	}
 }
 
-// duckdb_create_hugeint
-// duckdb_create_uhugeint
-// duckdb_create_varint
-// duckdb_create_decimal
-// duckdb_create_float
-// duckdb_create_double
-// duckdb_create_date
-// duckdb_create_time
+// CreateHugeInt wraps duckdb_create_hugeint.
+// The return value must be destroyed with DestroyValue.
+func CreateHugeInt(val HugeInt) Value {
+	v := C.duckdb_create_hugeint(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUHugeInt wraps duckdb_create_uhugeint.
+// The return value must be destroyed with DestroyValue.
+func CreateUHugeInt(val UHugeInt) Value {
+	v := C.duckdb_create_uhugeint(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateVarint wraps duckdb_create_varint.
+// The return value must be destroyed with DestroyValue.
+func CreateVarint(val VarInt) Value {
+	v := C.duckdb_create_varint(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateDecimal wraps duckdb_create_decimal.
+// The return value must be destroyed with DestroyValue.
+func CreateDecimal(val Decimal) Value {
+	v := C.duckdb_create_decimal(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateFloat wraps duckdb_create_float.
+// The return value must be destroyed with DestroyValue.
+func CreateFloat(val float32) Value {
+	v := C.duckdb_create_float(C.float(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateDouble wraps duckdb_create_double.
+// The return value must be destroyed with DestroyValue.
+func CreateDouble(val float64) Value {
+	v := C.duckdb_create_double(C.double(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateDate wraps duckdb_create_date.
+// The return value must be destroyed with DestroyValue.
+func CreateDate(val Date) Value {
+	v := C.duckdb_create_date(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateTime wraps duckdb_create_time.
+// The return value must be destroyed with DestroyValue.
+func CreateTime(val Time) Value {
+	v := C.duckdb_create_time(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 // CreateTimeTZValue wraps duckdb_create_time_tz_value.
 // The return value must be destroyed with DestroyValue.
@@ -1391,15 +1720,116 @@ func CreateTimeTZValue(timeTZ TimeTZ) Value {
 	}
 }
 
-// duckdb_create_timestamp
-// duckdb_create_timestamp_tz
-// duckdb_create_timestamp_s
-// duckdb_create_timestamp_ms
-// duckdb_create_timestamp_ns
-// duckdb_create_interval
-// duckdb_create_blob
-// duckdb_create_bit
-// duckdb_create_uuid
+// CreateTimestamp wraps duckdb_create_timestamp.
+// The return value must be destroyed with DestroyValue.
+func CreateTimestamp(val Timestamp) Value {
+	v := C.duckdb_create_timestamp(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateTimestampTZ wraps duckdb_create_timestamp_tz.
+// The return value must be destroyed with DestroyValue.
+func CreateTimestampTZ(val Timestamp) Value {
+	v := C.duckdb_create_timestamp_tz(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateTimestampS wraps duckdb_create_timestamp_s.
+// The return value must be destroyed with DestroyValue.
+func CreateTimestampS(val TimestampS) Value {
+	v := C.duckdb_create_timestamp_s(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateTimestampMS wraps duckdb_create_timestamp_ms.
+// The return value must be destroyed with DestroyValue.
+func CreateTimestampMS(val TimestampMS) Value {
+	v := C.duckdb_create_timestamp_ms(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateTimestampNS wraps duckdb_create_timestamp_ns.
+// The return value must be destroyed with DestroyValue.
+func CreateTimestampNS(val TimestampNS) Value {
+	v := C.duckdb_create_timestamp_ns(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateInterval wraps duckdb_create_interval.
+// The return value must be destroyed with DestroyValue.
+func CreateInterval(val Interval) Value {
+	v := C.duckdb_create_interval(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateBlob wraps duckdb_create_blob.
+// The return value must be destroyed with DestroyValue.
+func CreateBlob(val []byte) Value {
+	cBytes := (*C.uint8_t)(C.CBytes(val))
+	defer Free(unsafe.Pointer(cBytes))
+
+	v := C.duckdb_create_blob(cBytes, IdxT(len(val)))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateBit wraps duckdb_create_bit.
+// The return value must be destroyed with DestroyValue.
+func CreateBit(val Bit) Value {
+	v := C.duckdb_create_bit(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateUUID wraps duckdb_create_uuid.
+// The return value must be destroyed with DestroyValue.
+func CreateUUID(val UHugeInt) Value {
+	v := C.duckdb_create_uuid(val)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 func GetBool(v Value) bool {
 	val := C.duckdb_get_bool(v.data())
@@ -1450,9 +1880,22 @@ func GetHugeInt(v Value) HugeInt {
 	return C.duckdb_get_hugeint(v.data())
 }
 
-// duckdb_get_uhugeint
-// duckdb_get_varint
-// duckdb_get_decimal
+func GetUHugeInt(v Value) UHugeInt {
+	return C.duckdb_get_uhugeint(v.data())
+}
+
+// GetVarInt wraps duckdb_get_varint.
+// The return value must be destroyed with DestroyVarInt.
+func GetVarInt(v Value) VarInt {
+	if debugMode {
+		allocCounters.varInt.Add(1)
+	}
+	return C.duckdb_get_varint(v.data())
+}
+
+func GetDecimal(v Value) Decimal {
+	return C.duckdb_get_decimal(v.data())
+}
 
 func GetFloat(v Value) float32 {
 	val := C.duckdb_get_float(v.data())
@@ -1480,19 +1923,59 @@ func GetTimestamp(v Value) Timestamp {
 	return C.duckdb_get_timestamp(v.data())
 }
 
-// duckdb_get_timestamp_tz
-// duckdb_get_timestamp_s
-// duckdb_get_timestamp_ms
-// duckdb_get_timestamp_ns
+func GetTimestampTZ(v Value) Timestamp {
+	return C.duckdb_get_timestamp_tz(v.data())
+}
+
+func GetTimestampS(v Value) TimestampS {
+	return C.duckdb_get_timestamp_s(v.data())
+}
+
+func GetTimestampMS(v Value) TimestampMS {
+	return C.duckdb_get_timestamp_ms(v.data())
+}
+
+func GetTimestampNS(v Value) TimestampNS {
+	return C.duckdb_get_timestamp_ns(v.data())
+}
 
 func GetInterval(v Value) Interval {
 	return C.duckdb_get_interval(v.data())
 }
 
-// duckdb_get_value_type
-// duckdb_get_blob
-// duckdb_get_bit
-// duckdb_get_uuid
+// GetValueType wraps duckdb_get_value_type.
+// The return value must be destroyed with DestroyLogicalType.
+func GetValueType(v Value) LogicalType {
+	logicalType := C.duckdb_get_value_type(v.data())
+	if debugMode {
+		allocCounters.logicalType.Add(1)
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
+}
+
+// GetBlob wraps duckdb_get_blob.
+// The return value must be destroyed with DestroyBlob.
+func GetBlob(v Value) Blob {
+	if debugMode {
+		allocCounters.blob.Add(1)
+	}
+	return C.duckdb_get_blob(v.data())
+}
+
+// GetBit wraps duckdb_get_bit.
+// The return value must be destroyed with DestroyBit.
+func GetBit(v Value) Bit {
+	if debugMode {
+		allocCounters.bit.Add(1)
+	}
+	return C.duckdb_get_bit(v.data())
+}
+
+func GetUUID(v Value) UHugeInt {
+	return C.duckdb_get_uuid(v.data())
+}
 
 func GetVarchar(v Value) string {
 	cStr := C.duckdb_get_varchar(v.data())
@@ -1500,9 +1983,55 @@ func GetVarchar(v Value) string {
 	return C.GoString(cStr)
 }
 
-// duckdb_create_struct_value
-// duckdb_create_list_value
-// duckdb_create_array_value
+// CreateStructValue wraps duckdb_create_struct_value.
+// The return value must be destroyed with DestroyValue.
+func CreateStructValue(logicalType LogicalType, values []Value) Value {
+	s := allocValueSlice(values)
+	defer Free(s)
+	valuesPtr := (*C.duckdb_value)(s)
+
+	v := C.duckdb_create_struct_value(logicalType.data(), valuesPtr)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateListValue wraps duckdb_create_list_value.
+// The return value must be destroyed with DestroyValue.
+func CreateListValue(logicalType LogicalType, values []Value) Value {
+	count := IdxT(len(values))
+	s := allocValueSlice(values)
+	defer Free(s)
+	valuesPtr := (*C.duckdb_value)(s)
+
+	v := C.duckdb_create_list_value(logicalType.data(), valuesPtr, count)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateArrayValue wraps duckdb_create_array_value.
+// The return value must be destroyed with DestroyValue.
+func CreateArrayValue(logicalType LogicalType, values []Value) Value {
+	count := IdxT(len(values))
+	s := allocValueSlice(values)
+	defer Free(s)
+	valuesPtr := (*C.duckdb_value)(s)
+
+	v := C.duckdb_create_array_value(logicalType.data(), valuesPtr, count)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 func GetMapSize(v Value) IdxT {
 	return C.duckdb_get_map_size(v.data())
@@ -1532,13 +2061,65 @@ func GetMapValue(v Value, index IdxT) Value {
 	}
 }
 
-// duckdb_is_null_value
-// duckdb_create_null_value
-// duckdb_get_list_size
-// duckdb_get_list_child
-// duckdb_create_enum_value
-// duckdb_get_enum_value
-// duckdb_get_struct_child
+func IsNullValue(v Value) bool {
+	return bool(C.duckdb_is_null_value(v.data()))
+}
+
+// CreateNullValue wraps duckdb_create_null_value.
+// The return value must be destroyed with DestroyValue.
+func CreateNullValue() Value {
+	v := C.duckdb_create_null_value()
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func GetListSize(v Value) IdxT {
+	return C.duckdb_get_list_size(v.data())
+}
+
+// GetListChild wraps duckdb_get_list_child.
+// The return value must be destroyed with DestroyValue.
+func GetListChild(val Value, index IdxT) Value {
+	v := C.duckdb_get_list_child(val.data(), index)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateEnumValue wraps duckdb_create_enum_value.
+// The return value must be destroyed with DestroyValue.
+func CreateEnumValue(logicalType LogicalType, val uint64) Value {
+	v := C.duckdb_create_enum_value(logicalType.data(), C.uint64_t(val))
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+func GetEnumValue(v Value) uint64 {
+	return uint64(C.duckdb_get_enum_value(v.data()))
+}
+
+// GetStructChild wraps duckdb_get_struct_child.
+// The return value must be destroyed with DestroyValue.
+func GetStructChild(val Value, index IdxT) Value {
+	v := C.duckdb_get_struct_child(val.data(), index)
+	if debugMode {
+		allocCounters.v.Add(1)
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
 
 // ------------------------------------------------------------------ //
 // Logical Type Interface
@@ -1607,9 +2188,9 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 func CreateStructType(types []LogicalType, names []string) LogicalType {
 	count := len(types)
 
-	typesSlice := allocLogicalTypeSlice(types)
-	defer Free(typesSlice)
-	typesPtr := (*C.duckdb_logical_type)(typesSlice)
+	s := allocLogicalTypeSlice(types)
+	defer Free(s)
+	typesPtr := (*C.duckdb_logical_type)(s)
 
 	namesSlice := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
 	defer Free(unsafe.Pointer(namesSlice))
@@ -1805,8 +2386,8 @@ func DestroyLogicalType(logicalType *LogicalType) {
 func CreateDataChunk(types []LogicalType) DataChunk {
 	count := len(types)
 
-	typesSlice := allocLogicalTypeSlice(types)
-	typesPtr := (*C.duckdb_logical_type)(typesSlice)
+	s := allocLogicalTypeSlice(types)
+	typesPtr := (*C.duckdb_logical_type)(s)
 	defer Free(unsafe.Pointer(typesPtr))
 
 	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(count))
@@ -1888,10 +2469,10 @@ func VectorAssignStringElement(vec Vector, index IdxT, str string) {
 	C.duckdb_vector_assign_string_element(vec.data(), index, cStr)
 }
 
-func VectorAssignStringElementLen(vec Vector, index IdxT, blob []byte, len IdxT) {
+func VectorAssignStringElementLen(vec Vector, index IdxT, blob []byte) {
 	cBytes := (*C.char)(C.CBytes(blob))
 	defer Free(unsafe.Pointer(cBytes))
-	C.duckdb_vector_assign_string_element_len(vec.data(), index, cBytes, len)
+	C.duckdb_vector_assign_string_element_len(vec.data(), index, cBytes, IdxT(len(blob)))
 }
 
 func ListVectorGetChild(vec Vector) Vector {
@@ -2675,20 +3256,30 @@ func ValidityMaskValueIsValid(maskPtr unsafe.Pointer, index IdxT) bool {
 
 const (
 	logicalTypeSize = C.size_t(unsafe.Sizeof((C.duckdb_logical_type)(nil)))
+	valueSize       = C.size_t(unsafe.Sizeof((C.duckdb_value)(nil)))
 	charSize        = C.size_t(unsafe.Sizeof((*C.char)(nil)))
 )
 
 func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
 	count := len(types)
-
-	// Initialize the memory of the logical types.
-	typesSlice := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
+	s := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
 	for i, t := range types {
 		// We only copy the pointers.
-		// The actual types live in types.
-		(*typesSlice)[i] = t.data()
+		// The memory is allocated in the types slice.
+		(*s)[i] = t.data()
 	}
-	return unsafe.Pointer(typesSlice)
+	return unsafe.Pointer(s)
+}
+
+func allocValueSlice(values []Value) unsafe.Pointer {
+	count := len(values)
+	s := (*[1 << 31]C.duckdb_value)(C.malloc(C.size_t(count) * valueSize))
+	for i, val := range values {
+		// We only copy the pointers.
+		// The memory is allocated in the values slice.
+		(*s)[i] = val.data()
+	}
+	return unsafe.Pointer(s)
 }
 
 // ------------------------------------------------------------------ //
@@ -2696,6 +3287,9 @@ func allocLogicalTypeSlice(types []LogicalType) unsafe.Pointer {
 // ------------------------------------------------------------------ //
 
 type allocationCounters struct {
+	blob           atomic.Int64
+	bit            atomic.Int64
+	varInt         atomic.Int64
 	cache          atomic.Int64
 	db             atomic.Int64
 	conn           atomic.Int64
@@ -2718,6 +3312,18 @@ type allocationCounters struct {
 var allocCounters = allocationCounters{}
 
 func VerifyAllocationCounters() {
+	blobCount := allocCounters.blob.Load()
+	if blobCount != 0 {
+		log.Panicf("blob count is %d", blobCount)
+	}
+	bitCount := allocCounters.bit.Load()
+	if bitCount != 0 {
+		log.Panicf("bit count is %d", bitCount)
+	}
+	varIntCount := allocCounters.varInt.Load()
+	if varIntCount != 0 {
+		log.Panicf("var int count is %d", varIntCount)
+	}
 	cacheCount := allocCounters.cache.Load()
 	if cacheCount != 0 {
 		log.Panicf("cache count is %d", cacheCount)
