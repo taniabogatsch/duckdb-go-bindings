@@ -3,12 +3,12 @@
 This repository wraps DuckDB's C API calls in Go native types and functions.
 
 ```diff
-! Many type aliases and function wrappers are still missing.
+! Some type aliases and function wrappers are still missing.
 ```
 
 ## Releases
 
-The first official release of this module contains DuckDB's v1.2.0 release.
+This module's *first* official release contains DuckDB's v1.2.0 release.
 
 | duckdb version | main module | darwin amd | darwin arm | linux amd | linux arm | windows amd |
 | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
