@@ -13,6 +13,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
+        version: [1.23, 1.24]
         include:
           - os: "macos-13"
             dir: "darwin-amd64"
@@ -29,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: ${{ matrix.version }}
       - name: Test ${{ matrix.dir }}
         run: |
           cd ${{ matrix.dir }}
@@ -43,6 +44,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
+        version: [1.23, 1.24]
         include:
           - os: "macos-13"
             filename: "libduckdb-osx-universal"
@@ -61,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: ${{ matrix.version }}
       - name: Test ${{ matrix.filename }}
         run: |
           make test.dynamic.lib FILENAME=${{ matrix.filename }}
@@ -75,6 +77,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
+        version: [1.23, 1.24]
         include:
           - os: "macos-13"
             dir: "darwin-amd64"
@@ -93,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: ${{ matrix.version }}
       - name: Test ${{ matrix.dir }}
         run: |
           CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/libs" go test

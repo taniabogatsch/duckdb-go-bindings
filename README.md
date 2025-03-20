@@ -1,9 +1,13 @@
 # duckdb-go-bindings
 
+![Tests status](https://github.com/duckdb/duckdb-go-bindings/actions/workflows/run_tests.yml/badge.svg)
+
 This repository wraps DuckDB's C API calls in Go native types and functions.
 
+Tested Go versions: 1.23, 1.24.
+
 ```diff
-! Some type aliases and function wrappers are still missing.
++ Some type aliases and function wrappers are still missing.
 ```
 
 ## Releases
