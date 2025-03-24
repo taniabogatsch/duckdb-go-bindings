@@ -1,10 +1,10 @@
 split.artefacts:
-	mkdir ${DIRECTORY}/libs/core && \
-	mkdir ${DIRECTORY}/libs/corefunctions && \
-	mkdir ${DIRECTORY}/libs/parquet && \
-	mkdir ${DIRECTORY}/libs/icu && \
-	mv ${DIRECTORY}/libs/libduckdb.a ${DIRECTORY}/libs/core/libduckdb.a && \
-	cd ${DIRECTORY}/libs/core && \
+	mkdir ${DIRECTORY}/core && \
+	mkdir ${DIRECTORY}/corefunctions && \
+	mkdir ${DIRECTORY}/parquet && \
+	mkdir ${DIRECTORY}/icu && \
+	mv ${DIRECTORY}/libduckdb.a ${DIRECTORY}/core/libduckdb.a && \
+	cd ${DIRECTORY}/core && \
 	${AR} -x libduckdb.a && \
 	rm -f __.SYMDEF && \
 	rm -f libduckdb.a && \
@@ -107,22 +107,20 @@ split.artefacts:
 fetch.static.lib:
 	cd ${DIRECTORY} && \
 	curl -OL https://github.com/duckdb/duckdb/releases/download/${VERSION}/${FILENAME}.zip && \
-	rm -rf libs && \
-	mkdir libs && \
+	rm *.a && \
 	rm -f duckdb.h && \
 	unzip ${FILENAME}.zip && \
-	mv libduckdb_bundle.a libs/libduckdb.a && \
+	mv libduckdb_bundle.a libduckdb.a && \
 	rm -f ${FILENAME}.zip
 
 fetch.static.lib.mingw:
 	cd ${DIRECTORY} && \
 	curl -OL https://github.com/taniabogatsch/duckdb/releases/download/v1.2.0-mingw/duckdb-static-lib-windows-mingw.zip && \
-	rm -rf libs && \
-	mkdir libs && \
+	rm *.a && \
 	rm -f duckdb.h && \
 	unzip duckdb-static-lib-windows-mingw.zip && \
 	unzip static-lib-windows-mingw.zip && \
-	mv libduckdb_bundle.a libs/libduckdb.a && \
+	mv libduckdb_bundle.a libduckdb.a && \
 	rm -f duckdb-static-lib-windows-mingw.zip && \
 	rm -f static-lib-windows-mingw.zip
 
