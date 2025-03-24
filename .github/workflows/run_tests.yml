@@ -70,6 +70,7 @@ jobs:
         run: |
           make test.dynamic.lib FILENAME=${{ matrix.filename }}
           CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test
+          CGO_ENABLED=1 CGO_LDFLAGS="-L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test -duckdb_use_lib
 
   static-lib-tests:
     name: Test Static Libs
@@ -103,3 +104,4 @@ jobs:
       - name: Test ${{ matrix.dir }}
         run: |
           CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test
+          CGO_ENABLED=1 CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -duckdb_use_static_lib
