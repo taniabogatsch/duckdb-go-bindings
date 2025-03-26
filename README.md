@@ -14,9 +14,10 @@ Tested Go versions: 1.23, 1.24.
 
 This module's *first* official release contains DuckDB's v1.2.0 release.
 
-| duckdb version | main module | darwin amd | darwin arm | linux amd | linux arm | windows amd |
-| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| v1.2.0      | v0.1.10 | v0.1.5 | v0.1.5 | v0.1.5 | v0.1.5 | v0.1.5 |
+| duckdb version | main module  | darwin amd | darwin arm | linux amd  | linux arm  | windows amd |
+|----------------|--------------|------------|------------|------------|------------|-------------|
+| v1.2.1         | v0.1.13      | v0.1.8     | v0.1.8     | v0.1.8     | v0.1.8     | v0.1.8      |
+| v1.2.0         | v0.1.10 - 12 | v0.1.5 - 7 | v0.1.5 - 7 | v0.1.5 - 7 | v0.1.5 - 7 | v0.1.5 - 7  |
 
 The main module (`github.com/duckdb/duckdb-go-bindings`) does not link any pre-built static library.
 
