@@ -115,13 +115,11 @@ fetch.static.lib:
 
 fetch.static.lib.mingw:
 	cd ${DIRECTORY} && \
-	curl -OL https://github.com/taniabogatsch/duckdb/releases/download/v1.2.0-mingw/duckdb-static-lib-windows-mingw.zip && \
+	curl -OL https://github.com/duckdb/duckdb/releases/download/${VERSION}/static-lib-windows-mingw.zip && \
 	rm *.a && \
 	rm -f duckdb.h && \
-	unzip duckdb-static-lib-windows-mingw.zip && \
 	unzip static-lib-windows-mingw.zip && \
 	mv libduckdb_bundle.a libduckdb.a && \
-	rm -f duckdb-static-lib-windows-mingw.zip && \
 	rm -f static-lib-windows-mingw.zip
 
 update.binding:
@@ -131,5 +129,5 @@ update.binding:
 test.dynamic.lib:
 	mkdir dynamic-dir && \
 	cd dynamic-dir && \
-	curl -OL https://github.com/duckdb/duckdb/releases/download/v1.2.0/${FILENAME}.zip && \
+	curl -OL https://github.com/duckdb/duckdb/releases/download/v1.2.1/${FILENAME}.zip && \
 	unzip ${FILENAME}.zip
