@@ -16,5 +16,5 @@ update.binding:
 test.dynamic.lib:
 	mkdir dynamic-dir && \
 	cd dynamic-dir && \
-	curl -OL https://github.com/duckdb/duckdb/releases/download/v1.2.1/${FILENAME}.zip && \
+	curl -OL https://github.com/duckdb/duckdb/releases/download/${DUCKDB_VERSION}/${FILENAME}.zip && \
 	unzip ${FILENAME}.zip
