@@ -22,13 +22,13 @@ jobs:
           -e CMAKE_BUILD_PARALLEL_LEVEL=2                                        \
           -e OVERRIDE_GIT_DESCRIBE=$OVERRIDE_GIT_DESCRIBE                        \
           -e EXTENSION_CONFIGS="$PWD/.github/config/bundled_extensions.cmake"    \
-          -e BUILD_JEMALLOC=0                                                    \
+          -e BUILD_JEMALLOC=1                                                    \
           -e ENABLE_EXTENSION_AUTOLOADING=1                                      \
           -e ENABLE_EXTENSION_AUTOINSTALL=1                                      \
           -e BUILD_BENCHMARK=1                                                   \
           -e FORCE_WARN_UNUSED=1                                                 \
           quay.io/pypa/manylinux2014_x86_64                                      \
-          bash -c "yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make -C $PWD"
+          bash -c "yum install -y perl-IPC-Cmd && git config --global --add safe.directory $PWD && make gather-libs -C $PWD"
 
       - name: Extract Libs
         shell: bash

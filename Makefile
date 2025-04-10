@@ -17,13 +17,10 @@ fetch.custom.duckdb:
 
 extract.custom.libs:
 	cd .. && \
-	rm -rf duckdb-go-bindings/custom-duckdb-linux-amd64/libs && \
-	mkdir duckdb-go-bindings/custom-duckdb-linux-amd64/libs && \
+	rm -rf duckdb-go-bindings/custom-duckdb-linux-amd64/*.a && \
 	rm -f duckdb-go-bindings/custom-duckdb-linux-amd64/duckdb.h && \
 	mv duckdb/src/include/duckdb.h duckdb-go-bindings/custom-duckdb-linux-amd64/duckdb.h && \
-	cp duckdb/build/release/src/libduckdb_static.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
-	cp duckdb/build/release/third_party/*/libduckdb_*.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
-	cp duckdb/build/release/extension/*/lib*_extension.a duckdb-go-bindings/custom-duckdb-linux-amd64/libs/. && \
+	cp duckdb/build/release/libs/* duckdb-go-bindings/custom-duckdb-linux-amd64/. && \
 	cd duckdb-go-bindings
 
 update.binding:
