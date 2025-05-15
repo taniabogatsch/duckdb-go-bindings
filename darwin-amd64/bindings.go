@@ -6,8 +6,9 @@ package duckdb_go_bindings
 import "C"
 
 import (
+	"fmt"
 	"log"
-	"sync/atomic"
+	"sync"
 	"unsafe"
 )
 
@@ -437,7 +438,7 @@ func ListEntryMembers(entry *ListEntry) (uint64, uint64) {
 // DestroyBlob destroys the data field of duckdb_blob.
 func DestroyBlob(b *Blob) {
 	if debugMode {
-		allocCounters.blob.Add(-1)
+		decrAllocCount("blob")
 	}
 	if b == nil {
 		return
@@ -449,7 +450,7 @@ func DestroyBlob(b *Blob) {
 // DestroyBit destroys the data field of duckdb_bit.
 func DestroyBit(b *Bit) {
 	if debugMode {
-		allocCounters.bit.Add(-1)
+		decrAllocCount("bit")
 	}
 	if b == nil {
 		return
@@ -461,7 +462,7 @@ func DestroyBit(b *Bit) {
 // DestroyVarInt destroys the data field of duckdb_varint.
 func DestroyVarInt(i *VarInt) {
 	if debugMode {
-		allocCounters.varInt.Add(-1)
+		decrAllocCount("varInt")
 	}
 	if i == nil {
 		return
@@ -777,7 +778,7 @@ func (array *ArrowArray) data() C.duckdb_arrow_array {
 func CreateInstanceCache() InstanceCache {
 	cache := C.duckdb_create_instance_cache()
 	if debugMode {
-		allocCounters.cache.Add(1)
+		incrAllocCount("cache")
 	}
 	return InstanceCache{
 		Ptr: unsafe.Pointer(cache),
@@ -798,7 +799,7 @@ func GetOrCreateFromCache(cache InstanceCache, path string, outDb *Database, con
 	*errMsg = C.GoString(err)
 
 	if debugMode {
-		allocCounters.db.Add(1)
+		incrAllocCount("db")
 	}
 	return state
 }
@@ -806,7 +807,7 @@ func GetOrCreateFromCache(cache InstanceCache, path string, outDb *Database, con
 // DestroyInstanceCache wraps duckdb_destroy_instance_cache.
 func DestroyInstanceCache(cache *InstanceCache) {
 	if debugMode {
-		allocCounters.cache.Add(-1)
+		decrAllocCount("cache")
 	}
 	if cache.Ptr == nil {
 		return
@@ -827,7 +828,7 @@ func Open(path string, outDb *Database) State {
 	outDb.Ptr = unsafe.Pointer(db)
 
 	if debugMode {
-		allocCounters.db.Add(1)
+		incrAllocCount("db")
 	}
 	return state
 }
@@ -846,7 +847,7 @@ func OpenExt(path string, outDb *Database, config Config, errMsg *string) State 
 	*errMsg = C.GoString(err)
 
 	if debugMode {
-		allocCounters.db.Add(1)
+		incrAllocCount("db")
 	}
 	return state
 }
@@ -854,7 +855,7 @@ func OpenExt(path string, outDb *Database, config Config, errMsg *string) State 
 // Close wraps duckdb_close.
 func Close(db *Database) {
 	if debugMode {
-		allocCounters.db.Add(-1)
+		decrAllocCount("db")
 	}
 	if db.Ptr == nil {
 		return
@@ -871,7 +872,7 @@ func Connect(db Database, outConn *Connection) State {
 	state := C.duckdb_connect(db.data(), &conn)
 	outConn.Ptr = unsafe.Pointer(conn)
 	if debugMode {
-		allocCounters.conn.Add(1)
+		incrAllocCount("conn")
 	}
 	return state
 }
@@ -887,7 +888,7 @@ func QueryProgress(conn Connection) QueryProgressType {
 // Disconnect wraps duckdb_disconnect.
 func Disconnect(conn *Connection) {
 	if debugMode {
-		allocCounters.conn.Add(-1)
+		decrAllocCount("conn")
 	}
 	if conn.Ptr == nil {
 		return
@@ -914,7 +915,7 @@ func CreateConfig(outConfig *Config) State {
 	state := C.duckdb_create_config(&config)
 	outConfig.Ptr = unsafe.Pointer(config)
 	if debugMode {
-		allocCounters.config.Add(1)
+		incrAllocCount("config")
 	}
 	return state
 }
@@ -944,7 +945,7 @@ func SetConfig(config Config, name string, option string) State {
 // DestroyConfig wraps duckdb_destroy_config.
 func DestroyConfig(config *Config) {
 	if debugMode {
-		allocCounters.config.Add(-1)
+		decrAllocCount("config")
 	}
 	if config.Ptr == nil {
 		return
@@ -962,7 +963,7 @@ func DestroyConfig(config *Config) {
 // outRes must be destroyed with DestroyResult.
 func Query(conn Connection, query string, outRes *Result) State {
 	if debugMode {
-		allocCounters.res.Add(1)
+		incrAllocCount("res")
 	}
 	cQuery := C.CString(query)
 	defer Free(unsafe.Pointer(cQuery))
@@ -973,7 +974,7 @@ func Query(conn Connection, query string, outRes *Result) State {
 // DestroyResult wraps duckdb_destroy_result.
 func DestroyResult(res *Result) {
 	if debugMode {
-		allocCounters.res.Add(-1)
+		decrAllocCount("res")
 	}
 	if res == nil {
 		return
@@ -1000,7 +1001,7 @@ func ResultStatementType(res Result) StatementType {
 func ColumnLogicalType(res *Result, col IdxT) LogicalType {
 	logicalType := C.duckdb_column_logical_type(&res.data, col)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -1033,7 +1034,7 @@ func ResultErrorType(res *Result) ErrorType {
 func ResultGetChunk(res Result, index IdxT) DataChunk {
 	chunk := C.duckdb_result_get_chunk(res.data, index)
 	if debugMode {
-		allocCounters.chunk.Add(1)
+		incrAllocCount("chunk")
 	}
 	return DataChunk{
 		Ptr: unsafe.Pointer(chunk),
@@ -1194,7 +1195,7 @@ func Prepare(conn Connection, query string, outPreparedStmt *PreparedStatement) 
 	state := C.duckdb_prepare(conn.data(), cQuery, &preparedStmt)
 	outPreparedStmt.Ptr = unsafe.Pointer(preparedStmt)
 	if debugMode {
-		allocCounters.preparedStmt.Add(1)
+		incrAllocCount("preparedStmt")
 	}
 	return state
 }
@@ -1202,7 +1203,7 @@ func Prepare(conn Connection, query string, outPreparedStmt *PreparedStatement) 
 // DestroyPrepare wraps duckdb_destroy_prepare.
 func DestroyPrepare(preparedStmt *PreparedStatement) {
 	if debugMode {
-		allocCounters.preparedStmt.Add(-1)
+		decrAllocCount("preparedStmt")
 	}
 	if preparedStmt.Ptr == nil {
 		return
@@ -1236,7 +1237,7 @@ func ParamType(preparedStmt PreparedStatement, index IdxT) Type {
 func ParamLogicalType(preparedStmt PreparedStatement, index IdxT) LogicalType {
 	logicalType := C.duckdb_param_logical_type(preparedStmt.data(), index)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -1371,7 +1372,7 @@ func BindNull(preparedStmt PreparedStatement, index IdxT) State {
 // outRes must be destroyed with DestroyResult.
 func ExecutePrepared(preparedStmt PreparedStatement, outRes *Result) State {
 	if debugMode {
-		allocCounters.res.Add(1)
+		incrAllocCount("res")
 	}
 	return C.duckdb_execute_prepared(preparedStmt.data(), &outRes.data)
 }
@@ -1390,7 +1391,7 @@ func ExtractStatements(conn Connection, query string, outExtractedStmts *Extract
 	count := C.duckdb_extract_statements(conn.data(), cQuery, &extractedStmts)
 	outExtractedStmts.Ptr = unsafe.Pointer(extractedStmts)
 	if debugMode {
-		allocCounters.extractedStmts.Add(1)
+		incrAllocCount("extractedStmts")
 	}
 	return count
 }
@@ -1402,7 +1403,7 @@ func PrepareExtractedStatement(conn Connection, extractedStmts ExtractedStatemen
 	state := C.duckdb_prepare_extracted_statement(conn.data(), extractedStmts.data(), index, &preparedStmt)
 	outPreparedStmt.Ptr = unsafe.Pointer(preparedStmt)
 	if debugMode {
-		allocCounters.preparedStmt.Add(1)
+		incrAllocCount("preparedStmt")
 	}
 	return state
 }
@@ -1415,7 +1416,7 @@ func ExtractStatementsError(extractedStmts ExtractedStatements) string {
 // DestroyExtracted wraps duckdb_destroy_extracted.
 func DestroyExtracted(extractedStmts *ExtractedStatements) {
 	if debugMode {
-		allocCounters.extractedStmts.Add(-1)
+		decrAllocCount("extractedStmts")
 	}
 	if extractedStmts.Ptr == nil {
 		return
@@ -1436,7 +1437,7 @@ func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResul
 	state := C.duckdb_pending_prepared(preparedStmt.data(), &pendingRes)
 	outPendingRes.Ptr = unsafe.Pointer(pendingRes)
 	if debugMode {
-		allocCounters.pendingRes.Add(1)
+		incrAllocCount("pendingRes")
 	}
 	return state
 }
@@ -1444,7 +1445,7 @@ func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResul
 // DestroyPending wraps duckdb_destroy_pending.
 func DestroyPending(pendingRes *PendingResult) {
 	if debugMode {
-		allocCounters.pendingRes.Add(-1)
+		decrAllocCount("pendingRes")
 	}
 	if pendingRes.Ptr == nil {
 		return
@@ -1471,7 +1472,7 @@ func PendingExecuteCheckState(pendingRes PendingResult) PendingState {
 // outRes must be destroyed with DestroyResult.
 func ExecutePending(res PendingResult, outRes *Result) State {
 	if debugMode {
-		allocCounters.res.Add(1)
+		incrAllocCount("res")
 	}
 	return C.duckdb_execute_pending(res.data(), &outRes.data)
 }
@@ -1487,7 +1488,7 @@ func PendingExecutionIsFinished(state PendingState) bool {
 // DestroyValue wraps duckdb_destroy_value.
 func DestroyValue(v *Value) {
 	if debugMode {
-		allocCounters.v.Add(-1)
+		decrAllocCount("v")
 	}
 	if v.Ptr == nil {
 		return
@@ -1504,7 +1505,7 @@ func CreateVarchar(str string) Value {
 	defer Free(unsafe.Pointer(cStr))
 	v := C.duckdb_create_varchar(cStr)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1518,7 +1519,7 @@ func CreateVarcharLength(str string, length IdxT) Value {
 	defer Free(unsafe.Pointer(cStr))
 	v := C.duckdb_create_varchar_length(cStr, length)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1530,7 +1531,7 @@ func CreateVarcharLength(str string, length IdxT) Value {
 func CreateBool(val bool) Value {
 	v := C.duckdb_create_bool(C.bool(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1542,7 +1543,7 @@ func CreateBool(val bool) Value {
 func CreateInt8(val int8) Value {
 	v := C.duckdb_create_int8(C.int8_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1554,7 +1555,7 @@ func CreateInt8(val int8) Value {
 func CreateUInt8(val uint8) Value {
 	v := C.duckdb_create_uint8(C.uint8_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1566,7 +1567,7 @@ func CreateUInt8(val uint8) Value {
 func CreateInt16(val int16) Value {
 	v := C.duckdb_create_int16(C.int16_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1578,7 +1579,7 @@ func CreateInt16(val int16) Value {
 func CreateUInt16(val uint16) Value {
 	v := C.duckdb_create_uint16(C.uint16_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1590,7 +1591,7 @@ func CreateUInt16(val uint16) Value {
 func CreateInt32(val int32) Value {
 	v := C.duckdb_create_int32(C.int32_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1602,7 +1603,7 @@ func CreateInt32(val int32) Value {
 func CreateUInt32(val uint32) Value {
 	v := C.duckdb_create_uint32(C.uint32_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1614,7 +1615,7 @@ func CreateUInt32(val uint32) Value {
 func CreateUInt64(val uint64) Value {
 	v := C.duckdb_create_uint64(C.uint64_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1626,7 +1627,7 @@ func CreateUInt64(val uint64) Value {
 func CreateInt64(val int64) Value {
 	v := C.duckdb_create_int64(C.int64_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1638,7 +1639,7 @@ func CreateInt64(val int64) Value {
 func CreateHugeInt(val HugeInt) Value {
 	v := C.duckdb_create_hugeint(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1650,7 +1651,7 @@ func CreateHugeInt(val HugeInt) Value {
 func CreateUHugeInt(val UHugeInt) Value {
 	v := C.duckdb_create_uhugeint(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1662,7 +1663,7 @@ func CreateUHugeInt(val UHugeInt) Value {
 func CreateVarint(val VarInt) Value {
 	v := C.duckdb_create_varint(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1674,7 +1675,7 @@ func CreateVarint(val VarInt) Value {
 func CreateDecimal(val Decimal) Value {
 	v := C.duckdb_create_decimal(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1686,7 +1687,7 @@ func CreateDecimal(val Decimal) Value {
 func CreateFloat(val float32) Value {
 	v := C.duckdb_create_float(C.float(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1698,7 +1699,7 @@ func CreateFloat(val float32) Value {
 func CreateDouble(val float64) Value {
 	v := C.duckdb_create_double(C.double(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1710,7 +1711,7 @@ func CreateDouble(val float64) Value {
 func CreateDate(val Date) Value {
 	v := C.duckdb_create_date(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1722,7 +1723,7 @@ func CreateDate(val Date) Value {
 func CreateTime(val Time) Value {
 	v := C.duckdb_create_time(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1734,7 +1735,7 @@ func CreateTime(val Time) Value {
 func CreateTimeTZValue(timeTZ TimeTZ) Value {
 	v := C.duckdb_create_time_tz_value(timeTZ)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1746,7 +1747,7 @@ func CreateTimeTZValue(timeTZ TimeTZ) Value {
 func CreateTimestamp(val Timestamp) Value {
 	v := C.duckdb_create_timestamp(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1758,7 +1759,7 @@ func CreateTimestamp(val Timestamp) Value {
 func CreateTimestampTZ(val Timestamp) Value {
 	v := C.duckdb_create_timestamp_tz(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1770,7 +1771,7 @@ func CreateTimestampTZ(val Timestamp) Value {
 func CreateTimestampS(val TimestampS) Value {
 	v := C.duckdb_create_timestamp_s(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1782,7 +1783,7 @@ func CreateTimestampS(val TimestampS) Value {
 func CreateTimestampMS(val TimestampMS) Value {
 	v := C.duckdb_create_timestamp_ms(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1794,7 +1795,7 @@ func CreateTimestampMS(val TimestampMS) Value {
 func CreateTimestampNS(val TimestampNS) Value {
 	v := C.duckdb_create_timestamp_ns(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1806,7 +1807,7 @@ func CreateTimestampNS(val TimestampNS) Value {
 func CreateInterval(val Interval) Value {
 	v := C.duckdb_create_interval(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1821,7 +1822,7 @@ func CreateBlob(val []byte) Value {
 
 	v := C.duckdb_create_blob(cBytes, IdxT(len(val)))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1833,7 +1834,7 @@ func CreateBlob(val []byte) Value {
 func CreateBit(val Bit) Value {
 	v := C.duckdb_create_bit(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1845,7 +1846,7 @@ func CreateBit(val Bit) Value {
 func CreateUUID(val UHugeInt) Value {
 	v := C.duckdb_create_uuid(val)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -1909,7 +1910,7 @@ func GetUHugeInt(v Value) UHugeInt {
 // The return value must be destroyed with DestroyVarInt.
 func GetVarInt(v Value) VarInt {
 	if debugMode {
-		allocCounters.varInt.Add(1)
+		incrAllocCount("varInt")
 	}
 	return C.duckdb_get_varint(v.data())
 }
@@ -1969,7 +1970,7 @@ func GetInterval(v Value) Interval {
 func GetValueType(v Value) LogicalType {
 	logicalType := C.duckdb_get_value_type(v.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -1980,7 +1981,7 @@ func GetValueType(v Value) LogicalType {
 // The return value must be destroyed with DestroyBlob.
 func GetBlob(v Value) Blob {
 	if debugMode {
-		allocCounters.blob.Add(1)
+		incrAllocCount("blob")
 	}
 	return C.duckdb_get_blob(v.data())
 }
@@ -1989,7 +1990,7 @@ func GetBlob(v Value) Blob {
 // The return value must be destroyed with DestroyBit.
 func GetBit(v Value) Bit {
 	if debugMode {
-		allocCounters.bit.Add(1)
+		incrAllocCount("bit")
 	}
 	return C.duckdb_get_bit(v.data())
 }
@@ -2013,7 +2014,7 @@ func CreateStructValue(logicalType LogicalType, values []Value) Value {
 
 	v := C.duckdb_create_struct_value(logicalType.data(), valuesPtr)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2030,7 +2031,7 @@ func CreateListValue(logicalType LogicalType, values []Value) Value {
 
 	v := C.duckdb_create_list_value(logicalType.data(), valuesPtr, count)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2047,7 +2048,7 @@ func CreateArrayValue(logicalType LogicalType, values []Value) Value {
 
 	v := C.duckdb_create_array_value(logicalType.data(), valuesPtr, count)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2063,7 +2064,7 @@ func GetMapSize(v Value) IdxT {
 func GetMapKey(v Value, index IdxT) Value {
 	value := C.duckdb_get_map_key(v.data(), index)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(value),
@@ -2075,7 +2076,7 @@ func GetMapKey(v Value, index IdxT) Value {
 func GetMapValue(v Value, index IdxT) Value {
 	value := C.duckdb_get_map_value(v.data(), index)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(value),
@@ -2091,7 +2092,7 @@ func IsNullValue(v Value) bool {
 func CreateNullValue() Value {
 	v := C.duckdb_create_null_value()
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2107,7 +2108,7 @@ func GetListSize(v Value) IdxT {
 func GetListChild(val Value, index IdxT) Value {
 	v := C.duckdb_get_list_child(val.data(), index)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2119,7 +2120,7 @@ func GetListChild(val Value, index IdxT) Value {
 func CreateEnumValue(logicalType LogicalType, val uint64) Value {
 	v := C.duckdb_create_enum_value(logicalType.data(), C.uint64_t(val))
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2135,7 +2136,7 @@ func GetEnumValue(v Value) uint64 {
 func GetStructChild(val Value, index IdxT) Value {
 	v := C.duckdb_get_struct_child(val.data(), index)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2151,7 +2152,7 @@ func GetStructChild(val Value, index IdxT) Value {
 func CreateLogicalType(t Type) LogicalType {
 	logicalType := C.duckdb_create_logical_type(t)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2175,7 +2176,7 @@ func LogicalTypeSetAlias(logicalType LogicalType, alias string) {
 func CreateListType(child LogicalType) LogicalType {
 	logicalType := C.duckdb_create_list_type(child.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2187,7 +2188,7 @@ func CreateListType(child LogicalType) LogicalType {
 func CreateArrayType(child LogicalType, size IdxT) LogicalType {
 	logicalType := C.duckdb_create_array_type(child.data(), size)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2199,7 +2200,7 @@ func CreateArrayType(child LogicalType, size IdxT) LogicalType {
 func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 	logicalType := C.duckdb_create_map_type(key.data(), value.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2225,7 +2226,7 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 	}
 
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2251,7 +2252,7 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 	}
 
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2273,7 +2274,7 @@ func CreateEnumType(names []string) LogicalType {
 	}
 
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2285,7 +2286,7 @@ func CreateEnumType(names []string) LogicalType {
 func CreateDecimalType(width uint8, scale uint8) LogicalType {
 	logicalType := C.duckdb_create_decimal_type(C.uint8_t(width), C.uint8_t(scale))
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2330,7 +2331,7 @@ func EnumDictionaryValue(logicalType LogicalType, index IdxT) string {
 func ListTypeChildType(logicalType LogicalType) LogicalType {
 	child := C.duckdb_list_type_child_type(logicalType.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(child),
@@ -2342,7 +2343,7 @@ func ListTypeChildType(logicalType LogicalType) LogicalType {
 func ArrayTypeChildType(logicalType LogicalType) LogicalType {
 	child := C.duckdb_array_type_child_type(logicalType.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(child),
@@ -2358,7 +2359,7 @@ func ArrayTypeArraySize(logicalType LogicalType) IdxT {
 func MapTypeKeyType(logicalType LogicalType) LogicalType {
 	key := C.duckdb_map_type_key_type(logicalType.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(key),
@@ -2370,7 +2371,7 @@ func MapTypeKeyType(logicalType LogicalType) LogicalType {
 func MapTypeValueType(logicalType LogicalType) LogicalType {
 	value := C.duckdb_map_type_value_type(logicalType.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(value),
@@ -2392,7 +2393,7 @@ func StructTypeChildName(logicalType LogicalType, index IdxT) string {
 func StructTypeChildType(logicalType LogicalType, index IdxT) LogicalType {
 	child := C.duckdb_struct_type_child_type(logicalType.data(), index)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(child),
@@ -2414,7 +2415,7 @@ func UnionTypeMemberName(logicalType LogicalType, index IdxT) string {
 func UnionTypeMemberType(logicalType LogicalType, index IdxT) LogicalType {
 	t := C.duckdb_union_type_member_type(logicalType.data(), index)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(t),
@@ -2424,7 +2425,7 @@ func UnionTypeMemberType(logicalType LogicalType, index IdxT) LogicalType {
 // DestroyLogicalType wraps duckdb_destroy_logical_type.
 func DestroyLogicalType(logicalType *LogicalType) {
 	if debugMode {
-		allocCounters.logicalType.Add(-1)
+		decrAllocCount("logicalType")
 	}
 	if logicalType.Ptr == nil {
 		return
@@ -2453,7 +2454,7 @@ func CreateDataChunk(types []LogicalType) DataChunk {
 
 	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(count))
 	if debugMode {
-		allocCounters.chunk.Add(1)
+		incrAllocCount("chunk")
 	}
 	return DataChunk{
 		Ptr: unsafe.Pointer(chunk),
@@ -2463,7 +2464,7 @@ func CreateDataChunk(types []LogicalType) DataChunk {
 // DestroyDataChunk wraps duckdb_destroy_data_chunk.
 func DestroyDataChunk(chunk *DataChunk) {
 	if debugMode {
-		allocCounters.chunk.Add(-1)
+		decrAllocCount("chunk")
 	}
 	if chunk.Ptr == nil {
 		return
@@ -2505,7 +2506,7 @@ func DataChunkSetSize(chunk DataChunk, size IdxT) {
 func VectorGetColumnType(vec Vector) LogicalType {
 	logicalType := C.duckdb_vector_get_column_type(vec.data())
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -2604,7 +2605,7 @@ func ValiditySetRowValid(maskPtr unsafe.Pointer, row IdxT) {
 func CreateScalarFunction() ScalarFunction {
 	f := C.duckdb_create_scalar_function()
 	if debugMode {
-		allocCounters.scalarFunc.Add(1)
+		incrAllocCount("scalarFunc")
 	}
 	return ScalarFunction{
 		Ptr: unsafe.Pointer(f),
@@ -2614,7 +2615,7 @@ func CreateScalarFunction() ScalarFunction {
 // DestroyScalarFunction wraps duckdb_destroy_scalar_function.
 func DestroyScalarFunction(f *ScalarFunction) {
 	if debugMode {
-		allocCounters.scalarFunc.Add(-1)
+		decrAllocCount("scalarFunc")
 	}
 	if f.Ptr == nil {
 		return
@@ -2683,7 +2684,7 @@ func CreateScalarFunctionSet(name string) ScalarFunctionSet {
 
 	set := C.duckdb_create_scalar_function_set(cName)
 	if debugMode {
-		allocCounters.scalarFuncSet.Add(1)
+		incrAllocCount("scalarFuncSet")
 	}
 	return ScalarFunctionSet{
 		Ptr: unsafe.Pointer(set),
@@ -2693,7 +2694,7 @@ func CreateScalarFunctionSet(name string) ScalarFunctionSet {
 // DestroyScalarFunctionSet wraps duckdb_destroy_scalar_function_set.
 func DestroyScalarFunctionSet(set *ScalarFunctionSet) {
 	if debugMode {
-		allocCounters.scalarFuncSet.Add(-1)
+		decrAllocCount("scalarFuncSet")
 	}
 	if set.Ptr == nil {
 		return
@@ -2742,7 +2743,7 @@ func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 func CreateTableFunction() TableFunction {
 	f := C.duckdb_create_table_function()
 	if debugMode {
-		allocCounters.tableFunc.Add(1)
+		incrAllocCount("tableFunc")
 	}
 	return TableFunction{
 		Ptr: unsafe.Pointer(f),
@@ -2752,7 +2753,7 @@ func CreateTableFunction() TableFunction {
 // DestroyTableFunction wraps duckdb_destroy_table_function.
 func DestroyTableFunction(f *TableFunction) {
 	if debugMode {
-		allocCounters.tableFunc.Add(-1)
+		decrAllocCount("tableFunc")
 	}
 	if f.Ptr == nil {
 		return
@@ -2835,7 +2836,7 @@ func BindGetParameterCount(info BindInfo) IdxT {
 func BindGetParameter(info BindInfo, index IdxT) Value {
 	v := C.duckdb_bind_get_parameter(info.data(), index)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2849,7 +2850,7 @@ func BindGetNamedParameter(info BindInfo, name string) Value {
 	defer Free(unsafe.Pointer(cName))
 	v := C.duckdb_bind_get_named_parameter(info.data(), cName)
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2983,7 +2984,7 @@ func ProfilingInfoGetValue(info ProfilingInfo, key string) Value {
 	v := C.duckdb_profiling_info_get_value(info.data(), cKey)
 
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -2995,7 +2996,7 @@ func ProfilingInfoGetValue(info ProfilingInfo, key string) Value {
 func ProfilingInfoGetMetrics(info ProfilingInfo) Value {
 	v := C.duckdb_profiling_info_get_metrics(info.data())
 	if debugMode {
-		allocCounters.v.Add(1)
+		incrAllocCount("v")
 	}
 	return Value{
 		Ptr: unsafe.Pointer(v),
@@ -3029,7 +3030,7 @@ func AppenderCreate(conn Connection, schema string, table string, outAppender *A
 	state := C.duckdb_appender_create(conn.data(), cSchema, cTable, &appender)
 	outAppender.Ptr = unsafe.Pointer(appender)
 	if debugMode {
-		allocCounters.appender.Add(1)
+		incrAllocCount("appender")
 	}
 	return state
 }
@@ -3048,7 +3049,7 @@ func AppenderCreateExt(conn Connection, catalog string, schema string, table str
 	state := C.duckdb_appender_create_ext(conn.data(), cCatalog, cSchema, cTable, &appender)
 	outAppender.Ptr = unsafe.Pointer(appender)
 	if debugMode {
-		allocCounters.appender.Add(1)
+		incrAllocCount("appender")
 	}
 	return state
 }
@@ -3062,7 +3063,7 @@ func AppenderColumnCount(appender Appender) IdxT {
 func AppenderColumnType(appender Appender, index IdxT) LogicalType {
 	logicalType := C.duckdb_appender_column_type(appender.data(), index)
 	if debugMode {
-		allocCounters.logicalType.Add(1)
+		incrAllocCount("logicalType")
 	}
 	return LogicalType{
 		Ptr: unsafe.Pointer(logicalType),
@@ -3085,7 +3086,7 @@ func AppenderClose(appender Appender) State {
 // AppenderDestroy wraps duckdb_appender_destroy.
 func AppenderDestroy(appender *Appender) State {
 	if debugMode {
-		allocCounters.appender.Add(-1)
+		decrAllocCount("appender")
 	}
 	if appender.Ptr == nil {
 		return StateSuccess
@@ -3159,7 +3160,7 @@ func TableDescriptionCreate(conn Connection, schema string, table string, outDes
 	state := C.duckdb_table_description_create(conn.data(), cSchema, cTable, &description)
 	outDesc.Ptr = unsafe.Pointer(description)
 	if debugMode {
-		allocCounters.tableDesc.Add(1)
+		incrAllocCount("tableDesc")
 	}
 	return state
 }
@@ -3178,7 +3179,7 @@ func TableDescriptionCreateExt(conn Connection, catalog string, schema string, t
 	state := C.duckdb_table_description_create_ext(conn.data(), cCatalog, cSchema, cTable, &description)
 	outDesc.Ptr = unsafe.Pointer(description)
 	if debugMode {
-		allocCounters.tableDesc.Add(1)
+		incrAllocCount("tableDesc")
 	}
 	return state
 }
@@ -3186,7 +3187,7 @@ func TableDescriptionCreateExt(conn Connection, catalog string, schema string, t
 // TableDescriptionDestroy wraps duckdb_table_description_destroy.
 func TableDescriptionDestroy(desc *TableDescription) {
 	if debugMode {
-		allocCounters.tableDesc.Add(-1)
+		decrAllocCount("tableDesc")
 	}
 	if desc.Ptr == nil {
 		return
@@ -3251,7 +3252,7 @@ func QueryArrowError(arrow Arrow) string {
 // DestroyArrow wraps duckdb_destroy_arrow.
 func DestroyArrow(arrow *Arrow) {
 	if debugMode {
-		allocCounters.arrow.Add(-1)
+		decrAllocCount("arrow")
 	}
 	if arrow.Ptr == nil {
 		return
@@ -3271,7 +3272,7 @@ func ExecutePreparedArrow(preparedStmt PreparedStatement, outArrow *Arrow) State
 	state := C.duckdb_execute_prepared_arrow(preparedStmt.data(), &arrow)
 	outArrow.Ptr = unsafe.Pointer(arrow)
 	if debugMode {
-		allocCounters.arrow.Add(1)
+		incrAllocCount("arrow")
 	}
 	return state
 }
@@ -3385,110 +3386,85 @@ func allocNames(names []string) unsafe.Pointer {
 // Memory Safety
 // ------------------------------------------------------------------ //
 
-type allocationCounters struct {
-	blob           atomic.Int64
-	bit            atomic.Int64
-	varInt         atomic.Int64
-	cache          atomic.Int64
-	db             atomic.Int64
-	conn           atomic.Int64
-	config         atomic.Int64
-	logicalType    atomic.Int64
-	preparedStmt   atomic.Int64
-	extractedStmts atomic.Int64
-	pendingRes     atomic.Int64
-	res            atomic.Int64
-	v              atomic.Int64
-	chunk          atomic.Int64
-	scalarFunc     atomic.Int64
-	scalarFuncSet  atomic.Int64
-	tableFunc      atomic.Int64
-	appender       atomic.Int64
-	tableDesc      atomic.Int64
-	arrow          atomic.Int64
+var allocCounts syncMap
+
+type syncMap struct {
+	lock sync.Mutex
+	m    map[string]int
 }
 
-var allocCounters = allocationCounters{}
+func incrAllocCount(k string) {
+	allocCounts.lock.Lock()
+	defer allocCounts.lock.Unlock()
 
+	if allocCounts.m == nil {
+		allocCounts.m = make(map[string]int)
+	}
+
+	if _, ok := allocCounts.m[k]; ok {
+		allocCounts.m[k]++
+	} else {
+		allocCounts.m[k] = 1
+	}
+}
+
+func decrAllocCount(k string) {
+	allocCounts.lock.Lock()
+	defer allocCounts.lock.Unlock()
+
+	if allocCounts.m == nil {
+		allocCounts.m = make(map[string]int)
+	}
+
+	if v, ok := allocCounts.m[k]; ok {
+		if v == 1 {
+			delete(allocCounts.m, k)
+			return
+		}
+		allocCounts.m[k]--
+	}
+}
+
+// VerifyAllocationCounters verifies all allocation counters.
+// This includes the instance cache, which should be kept alive as long as the application is kept alive,
+// causing this verification to fail.
+// If you're using the instance cache, use VerifyAllocationCounter instead.
 func VerifyAllocationCounters() {
-	blobCount := allocCounters.blob.Load()
-	if blobCount != 0 {
-		log.Panicf("blob count is %d", blobCount)
+	msg := GetAllocationCounts()
+	if msg != "" {
+		log.Panic(msg)
 	}
-	bitCount := allocCounters.bit.Load()
-	if bitCount != 0 {
-		log.Panicf("bit count is %d", bitCount)
+}
+
+// GetAllocationCount returns the value of an allocation count, and true,
+// if it exists, otherwise zero, and false.
+func GetAllocationCount(k string) (int, bool) {
+	allocCounts.lock.Lock()
+	defer allocCounts.lock.Unlock()
+
+	if allocCounts.m == nil {
+		return 0, false
 	}
-	varIntCount := allocCounters.varInt.Load()
-	if varIntCount != 0 {
-		log.Panicf("var int count is %d", varIntCount)
+
+	v, ok := allocCounts.m[k]
+	return v, ok
+}
+
+// GetAllocationCounts returns the value of each non-zero allocation count.
+func GetAllocationCounts() string {
+	allocCounts.lock.Lock()
+	defer allocCounts.lock.Unlock()
+
+	if allocCounts.m == nil {
+		return ""
 	}
-	cacheCount := allocCounters.cache.Load()
-	if cacheCount != 0 {
-		log.Panicf("cache count is %d", cacheCount)
+
+	msg := ""
+	if len(allocCounts.m) != 0 {
+		for k, v := range allocCounts.m {
+			msg += fmt.Sprintf("%s count is %d\n", k, v)
+		}
 	}
-	dbCount := allocCounters.db.Load()
-	if dbCount != 0 {
-		log.Panicf("db count is %d", dbCount)
-	}
-	connCount := allocCounters.conn.Load()
-	if connCount != 0 {
-		log.Panicf("conn count is %d", connCount)
-	}
-	configCount := allocCounters.config.Load()
-	if configCount != 0 {
-		log.Panicf("config count is %d", configCount)
-	}
-	logicalTypeCount := allocCounters.logicalType.Load()
-	if logicalTypeCount != 0 {
-		log.Panicf("logical type count is %d", logicalTypeCount)
-	}
-	preparedStmtCount := allocCounters.preparedStmt.Load()
-	if preparedStmtCount != 0 {
-		log.Panicf("preparesd statement count is %d", preparedStmtCount)
-	}
-	extractedStmtsCount := allocCounters.extractedStmts.Load()
-	if extractedStmtsCount != 0 {
-		log.Panicf("extracted statements count is %d", extractedStmtsCount)
-	}
-	pendingResCount := allocCounters.pendingRes.Load()
-	if pendingResCount != 0 {
-		log.Panicf("pending res count is %d", pendingResCount)
-	}
-	resCount := allocCounters.res.Load()
-	if resCount != 0 {
-		log.Panicf("res count is %d", resCount)
-	}
-	vCount := allocCounters.v.Load()
-	if vCount != 0 {
-		log.Panicf("v count is %d", vCount)
-	}
-	chunkCount := allocCounters.chunk.Load()
-	if chunkCount != 0 {
-		log.Panicf("chunk count is %d", chunkCount)
-	}
-	scalarFuncCount := allocCounters.scalarFunc.Load()
-	if scalarFuncCount != 0 {
-		log.Panicf("scalar function count is %d", scalarFuncCount)
-	}
-	scalarFuncSetCount := allocCounters.scalarFuncSet.Load()
-	if scalarFuncSetCount != 0 {
-		log.Panicf("scalar function set count is %d", scalarFuncSetCount)
-	}
-	tableFuncCount := allocCounters.tableFunc.Load()
-	if tableFuncCount != 0 {
-		log.Panicf("table function count is %d", tableFuncCount)
-	}
-	appenderCount := allocCounters.appender.Load()
-	if appenderCount != 0 {
-		log.Panicf("appender count is %d", appenderCount)
-	}
-	tableDescCount := allocCounters.tableDesc.Load()
-	if tableDescCount != 0 {
-		log.Panicf("table description count is %d", tableDescCount)
-	}
-	arrowCount := allocCounters.arrow.Load()
-	if arrowCount != 0 {
-		log.Panicf("arrow count is %d", arrowCount)
-	}
+
+	return msg
 }
