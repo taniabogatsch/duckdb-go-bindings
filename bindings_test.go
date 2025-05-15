@@ -17,7 +17,7 @@ func TestVectorSize(t *testing.T) {
 func TestOpenSQLiteDB(t *testing.T) {
 	defer VerifyAllocationCounters()
 
-	dsn := "../test/pets.sqlite"
+	dsn := "test/pets.sqlite"
 
 	var config Config
 	defer DestroyConfig(&config)
