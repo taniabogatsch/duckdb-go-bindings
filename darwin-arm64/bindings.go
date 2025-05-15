@@ -3386,9 +3386,20 @@ func allocNames(names []string) unsafe.Pointer {
 // Memory Safety
 // ------------------------------------------------------------------ //
 
+var allocCounts syncMap
+
+type syncMap struct {
+	lock sync.Mutex
+	m    map[string]int
+}
+
 func incrAllocCount(k string) {
 	allocCounts.lock.Lock()
 	defer allocCounts.lock.Unlock()
+
+	if allocCounts.m == nil {
+		allocCounts.m = make(map[string]int)
+	}
 
 	if _, ok := allocCounts.m[k]; ok {
 		allocCounts.m[k]++
@@ -3401,6 +3412,10 @@ func decrAllocCount(k string) {
 	allocCounts.lock.Lock()
 	defer allocCounts.lock.Unlock()
 
+	if allocCounts.m == nil {
+		allocCounts.m = make(map[string]int)
+	}
+
 	if v, ok := allocCounts.m[k]; ok {
 		if v == 1 {
 			delete(allocCounts.m, k)
@@ -3408,36 +3423,6 @@ func decrAllocCount(k string) {
 		}
 		allocCounts.m[k]--
 	}
-}
-
-var allocCounts syncMap
-
-type syncMap struct {
-	lock sync.Mutex
-	m    map[string]int
-
-	//	counters = map[string]int{
-	//	"blob":           0,
-	//	"bit":          0,
-	//	"varInt":        0,
-	//	"cache":          0,
-	//	"db":           0,
-	//	"conn":            0,
-	//	"config":        0,
-	//	"logicalType":   0,
-	//	"preparedStmt":    0,
-	//	"extractedStmts":  0,
-	//	"pendingRes":      0,
-	//	"res":             0,
-	//	"v":               0,
-	//	"chunk":           0,
-	//	"scalarFunc":      0,
-	//	"scalarFuncSet":   0,
-	//	"tableFunc":       0,
-	//	"appender":        0,
-	//	"tableDesc":       0,
-	//	"arrow":           0,
-	//}
 }
 
 // VerifyAllocationCounters verifies all allocation counters.
@@ -3457,6 +3442,10 @@ func GetAllocationCount(k string) (int, bool) {
 	allocCounts.lock.Lock()
 	defer allocCounts.lock.Unlock()
 
+	if allocCounts.m == nil {
+		return 0, false
+	}
+
 	v, ok := allocCounts.m[k]
 	return v, ok
 }
@@ -3465,6 +3454,10 @@ func GetAllocationCount(k string) (int, bool) {
 func GetAllocationCounts() string {
 	allocCounts.lock.Lock()
 	defer allocCounts.lock.Unlock()
+
+	if allocCounts.m == nil {
+		return ""
+	}
 
 	msg := ""
 	if len(allocCounts.m) != 0 {
