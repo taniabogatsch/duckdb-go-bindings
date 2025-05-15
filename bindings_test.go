@@ -8,13 +8,16 @@ import (
 
 // TestVectorSize ensures that linking works.
 func TestVectorSize(t *testing.T) {
+	defer VerifyAllocationCounters()
 	require.Equal(t, IdxT(2048), VectorSize())
 }
 
 // TestOpenSQLiteDB ensures that extension auto install + load works,
 // as well as some basic C API functions.
 func TestOpenSQLiteDB(t *testing.T) {
-	dsn := "test/pets.sqlite"
+	defer VerifyAllocationCounters()
+
+	dsn := "../test/pets.sqlite"
 
 	var config Config
 	defer DestroyConfig(&config)
