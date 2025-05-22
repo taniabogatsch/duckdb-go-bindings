@@ -184,6 +184,8 @@ const (
 
 type IdxT = C.idx_t
 
+type SelT = C.sel_t
+
 // Types without internal pointers:
 
 type (
@@ -437,11 +439,11 @@ func ListEntryMembers(entry *ListEntry) (uint64, uint64) {
 
 // DestroyBlob destroys the data field of duckdb_blob.
 func DestroyBlob(b *Blob) {
-	if debugMode {
-		decrAllocCount("blob")
-	}
 	if b == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("blob")
 	}
 	Free(unsafe.Pointer(b.data))
 	b = nil
@@ -449,11 +451,11 @@ func DestroyBlob(b *Blob) {
 
 // DestroyBit destroys the data field of duckdb_bit.
 func DestroyBit(b *Bit) {
-	if debugMode {
-		decrAllocCount("bit")
-	}
 	if b == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("bit")
 	}
 	Free(unsafe.Pointer(b.data))
 	b = nil
@@ -461,11 +463,11 @@ func DestroyBit(b *Bit) {
 
 // DestroyVarInt destroys the data field of duckdb_varint.
 func DestroyVarInt(i *VarInt) {
-	if debugMode {
-		decrAllocCount("varInt")
-	}
 	if i == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("varInt")
 	}
 	Free(unsafe.Pointer(i.data))
 	i = nil
@@ -495,6 +497,7 @@ type Result struct {
 // NOTE: No wrappings for function pointers.
 // *duckdb_delete_callback_t
 // *duckdb_task_state
+// *duckdb_scalar_function_bind_t
 // *duckdb_scalar_function_t
 // *duckdb_aggregate_state_size
 // *duckdb_aggregate_init_t
@@ -529,6 +532,15 @@ func (vec *Vector) data() C.duckdb_vector {
 	return C.duckdb_vector(vec.Ptr)
 }
 
+// SelectionVector wraps *duckdb_selection_vector.
+type SelectionVector struct {
+	Ptr unsafe.Pointer
+}
+
+func (sel *SelectionVector) data() C.duckdb_selection_vector {
+	return C.duckdb_selection_vector(sel.Ptr)
+}
+
 // InstanceCache wraps *duckdb_instance_cache.
 type InstanceCache struct {
 	Ptr unsafe.Pointer
@@ -554,6 +566,15 @@ type Connection struct {
 
 func (conn *Connection) data() C.duckdb_connection {
 	return C.duckdb_connection(conn.Ptr)
+}
+
+// ClientContext wraps *duckdb_client_context.
+type ClientContext struct {
+	Ptr unsafe.Pointer
+}
+
+func (ctx *ClientContext) data() C.duckdb_client_context {
+	return C.duckdb_client_context(ctx.Ptr)
 }
 
 // PreparedStatement wraps *duckdb_prepared_statement.
@@ -806,11 +827,11 @@ func GetOrCreateFromCache(cache InstanceCache, path string, outDb *Database, con
 
 // DestroyInstanceCache wraps duckdb_destroy_instance_cache.
 func DestroyInstanceCache(cache *InstanceCache) {
-	if debugMode {
-		decrAllocCount("cache")
-	}
 	if cache.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("cache")
 	}
 	data := cache.data()
 	C.duckdb_destroy_instance_cache(&data)
@@ -854,11 +875,11 @@ func OpenExt(path string, outDb *Database, config Config, errMsg *string) State 
 
 // Close wraps duckdb_close.
 func Close(db *Database) {
-	if debugMode {
-		decrAllocCount("db")
-	}
 	if db.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("db")
 	}
 	data := db.data()
 	C.duckdb_close(&data)
@@ -887,21 +908,63 @@ func QueryProgress(conn Connection) QueryProgressType {
 
 // Disconnect wraps duckdb_disconnect.
 func Disconnect(conn *Connection) {
-	if debugMode {
-		decrAllocCount("conn")
-	}
 	if conn.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("conn")
 	}
 	data := conn.data()
 	C.duckdb_disconnect(&data)
 	conn.Ptr = nil
 }
 
+// ConnectionGetClientContext wraps duckdb_connection_get_client_context.
+// outCtx must be destroyed with DestroyClientContext.
+func ConnectionGetClientContext(conn Connection, outCtx *ClientContext) {
+	var ctx C.duckdb_client_context
+	C.duckdb_connection_get_client_context(conn.data(), &ctx)
+	outCtx.Ptr = unsafe.Pointer(ctx)
+	if debugMode {
+		incrAllocCount("ctx")
+	}
+}
+
+func ClientContextGetConnectionId(ctx ClientContext) IdxT {
+	return C.duckdb_client_context_get_connection_id(ctx.data())
+}
+
+// DestroyClientContext wraps duckdb_destroy_client_context.
+func DestroyClientContext(ctx *ClientContext) {
+	if ctx.Ptr == nil {
+		return
+	}
+	if debugMode {
+		decrAllocCount("ctx")
+	}
+	data := ctx.data()
+	C.duckdb_destroy_client_context(&data)
+	ctx.Ptr = nil
+}
+
 func LibraryVersion() string {
 	cStr := C.duckdb_library_version()
 	defer Free(unsafe.Pointer(cStr))
 	return C.GoString(cStr)
+}
+
+// GetTableNames wraps duckdb_get_table_names.
+// The return value must be destroyed with DestroyValue.
+func GetTableNames(conn Connection, query string, qualified bool) Value {
+	cQuery := C.CString(query)
+	defer Free(unsafe.Pointer(cQuery))
+	v := C.duckdb_get_table_names(conn.data(), cQuery, C.bool(qualified))
+	if debugMode {
+		incrAllocCount("v")
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
 }
 
 // ------------------------------------------------------------------ //
@@ -944,11 +1007,11 @@ func SetConfig(config Config, name string, option string) State {
 
 // DestroyConfig wraps duckdb_destroy_config.
 func DestroyConfig(config *Config) {
-	if debugMode {
-		decrAllocCount("config")
-	}
 	if config.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("config")
 	}
 	data := config.data()
 	C.duckdb_destroy_config(&data)
@@ -973,11 +1036,11 @@ func Query(conn Connection, query string, outRes *Result) State {
 
 // DestroyResult wraps duckdb_destroy_result.
 func DestroyResult(res *Result) {
-	if debugMode {
-		decrAllocCount("res")
-	}
 	if res == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("res")
 	}
 	C.duckdb_destroy_result(&res.data)
 	res = nil
@@ -1202,11 +1265,11 @@ func Prepare(conn Connection, query string, outPreparedStmt *PreparedStatement) 
 
 // DestroyPrepare wraps duckdb_destroy_prepare.
 func DestroyPrepare(preparedStmt *PreparedStatement) {
-	if debugMode {
-		decrAllocCount("preparedStmt")
-	}
 	if preparedStmt.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("preparedStmt")
 	}
 	data := preparedStmt.data()
 	C.duckdb_destroy_prepare(&data)
@@ -1415,11 +1478,11 @@ func ExtractStatementsError(extractedStmts ExtractedStatements) string {
 
 // DestroyExtracted wraps duckdb_destroy_extracted.
 func DestroyExtracted(extractedStmts *ExtractedStatements) {
-	if debugMode {
-		decrAllocCount("extractedStmts")
-	}
 	if extractedStmts.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("extractedStmts")
 	}
 	data := extractedStmts.data()
 	C.duckdb_destroy_extracted(&data)
@@ -1444,11 +1507,11 @@ func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResul
 
 // DestroyPending wraps duckdb_destroy_pending.
 func DestroyPending(pendingRes *PendingResult) {
-	if debugMode {
-		decrAllocCount("pendingRes")
-	}
 	if pendingRes.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("pendingRes")
 	}
 	data := pendingRes.data()
 	C.duckdb_destroy_pending(&data)
@@ -1487,11 +1550,11 @@ func PendingExecutionIsFinished(state PendingState) bool {
 
 // DestroyValue wraps duckdb_destroy_value.
 func DestroyValue(v *Value) {
-	if debugMode {
-		decrAllocCount("v")
-	}
 	if v.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("v")
 	}
 	data := v.data()
 	C.duckdb_destroy_value(&data)
@@ -2025,6 +2088,7 @@ func CreateStructValue(logicalType LogicalType, values []Value) Value {
 // The return value must be destroyed with DestroyValue.
 func CreateListValue(logicalType LogicalType, values []Value) Value {
 	count := IdxT(len(values))
+
 	s := allocValues(values)
 	defer Free(s)
 	valuesPtr := (*C.duckdb_value)(s)
@@ -2042,11 +2106,46 @@ func CreateListValue(logicalType LogicalType, values []Value) Value {
 // The return value must be destroyed with DestroyValue.
 func CreateArrayValue(logicalType LogicalType, values []Value) Value {
 	count := IdxT(len(values))
+
 	s := allocValues(values)
 	defer Free(s)
 	valuesPtr := (*C.duckdb_value)(s)
 
 	v := C.duckdb_create_array_value(logicalType.data(), valuesPtr, count)
+	if debugMode {
+		incrAllocCount("v")
+	}
+	return Value{
+		Ptr: unsafe.Pointer(v),
+	}
+}
+
+// CreateMapValue wraps duckdb_create_map_value.
+// The return value must be destroyed with DestroyValue.
+func CreateMapValue(logicalType LogicalType, keys []Value, values []Value) Value {
+	count := IdxT(len(keys))
+
+	k := allocValues(keys)
+	defer Free(k)
+	keysPtr := (*C.duckdb_value)(k)
+
+	v := allocValues(values)
+	defer Free(v)
+	valuesPtr := (*C.duckdb_value)(v)
+
+	m := C.duckdb_create_map_value(logicalType.data(), keysPtr, valuesPtr, count)
+	if debugMode {
+		incrAllocCount("v")
+	}
+	return Value{
+		Ptr: unsafe.Pointer(m),
+	}
+}
+
+// CreateUnionValue wraps duckdb_create_union_value.
+// The return value must be destroyed with DestroyValue.
+func CreateUnionValue(logicalType LogicalType, tag IdxT, value Value) Value {
+	v := C.duckdb_create_union_value(logicalType.data(), tag, value.data())
 	if debugMode {
 		incrAllocCount("v")
 	}
@@ -2141,6 +2240,12 @@ func GetStructChild(val Value, index IdxT) Value {
 	return Value{
 		Ptr: unsafe.Pointer(v),
 	}
+}
+
+func ValueToString(val Value) string {
+	str := C.duckdb_value_to_string(val.data())
+	defer Free(unsafe.Pointer(str))
+	return C.GoString(str)
 }
 
 // ------------------------------------------------------------------ //
@@ -2424,11 +2529,11 @@ func UnionTypeMemberType(logicalType LogicalType, index IdxT) LogicalType {
 
 // DestroyLogicalType wraps duckdb_destroy_logical_type.
 func DestroyLogicalType(logicalType *LogicalType) {
-	if debugMode {
-		decrAllocCount("logicalType")
-	}
 	if logicalType.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("logicalType")
 	}
 	data := logicalType.data()
 	C.duckdb_destroy_logical_type(&data)
@@ -2463,11 +2568,11 @@ func CreateDataChunk(types []LogicalType) DataChunk {
 
 // DestroyDataChunk wraps duckdb_destroy_data_chunk.
 func DestroyDataChunk(chunk *DataChunk) {
-	if debugMode {
-		decrAllocCount("chunk")
-	}
 	if chunk.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("chunk")
 	}
 	data := chunk.data()
 	C.duckdb_destroy_data_chunk(&data)
@@ -2500,6 +2605,31 @@ func DataChunkSetSize(chunk DataChunk, size IdxT) {
 // ------------------------------------------------------------------ //
 // Vector Interface
 // ------------------------------------------------------------------ //
+
+// CreateVector wraps duckdb_create_vector.
+// The return value must be destroyed with DestroyVector.
+func CreateVector(logicalType LogicalType, capacity IdxT) Vector {
+	vec := C.duckdb_create_vector(logicalType.data(), capacity)
+	if debugMode {
+		incrAllocCount("vec")
+	}
+	return Vector{
+		Ptr: unsafe.Pointer(vec),
+	}
+}
+
+// DestroyVector wraps duckdb_destroy_vector.
+func DestroyVector(vec *Vector) {
+	if vec.Ptr == nil {
+		return
+	}
+	if debugMode {
+		decrAllocCount("vec")
+	}
+	data := vec.data()
+	C.duckdb_destroy_vector(&data)
+	vec.Ptr = nil
+}
 
 // VectorGetColumnType wraps duckdb_vector_get_column_type.
 // The return value must be destroyed with DestroyLogicalType.
@@ -2572,6 +2702,18 @@ func ArrayVectorGetChild(vec Vector) Vector {
 	}
 }
 
+func SliceVector(vec Vector, sel SelectionVector, len IdxT) {
+	C.duckdb_slice_vector(vec.data(), sel.data(), len)
+}
+
+func VectorReferenceValue(vec Vector, v Value) {
+	C.duckdb_vector_reference_value(vec.data(), v.data())
+}
+
+func VectorReferenceVector(toVec Vector, fromVec Vector) {
+	C.duckdb_vector_reference_vector(toVec.data(), fromVec.data())
+}
+
 // ------------------------------------------------------------------ //
 // Validity Mask Functions
 // ------------------------------------------------------------------ //
@@ -2614,11 +2756,11 @@ func CreateScalarFunction() ScalarFunction {
 
 // DestroyScalarFunction wraps duckdb_destroy_scalar_function.
 func DestroyScalarFunction(f *ScalarFunction) {
-	if debugMode {
-		decrAllocCount("scalarFunc")
-	}
 	if f.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("scalarFunc")
 	}
 	data := f.data()
 	C.duckdb_destroy_scalar_function(&data)
@@ -2656,6 +2798,22 @@ func ScalarFunctionSetExtraInfo(f ScalarFunction, extraInfoPtr unsafe.Pointer, c
 	C.duckdb_scalar_function_set_extra_info(f.data(), extraInfoPtr, callback)
 }
 
+func ScalarFunctionSetBind(f ScalarFunction, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_scalar_function_bind_t(callbackPtr)
+	C.duckdb_scalar_function_set_bind(f.data(), callback)
+}
+
+func ScalarFunctionSetBindData(info BindInfo, bindDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_scalar_function_set_bind_data(info.data(), bindDataPtr, callback)
+}
+
+func ScalarFunctionBindSetError(info BindInfo, err string) {
+	cErr := C.CString(err)
+	defer Free(unsafe.Pointer(cErr))
+	C.duckdb_scalar_function_bind_set_error(info.data(), cErr)
+}
+
 func ScalarFunctionSetFunction(f ScalarFunction, callbackPtr unsafe.Pointer) {
 	callback := C.duckdb_scalar_function_t(callbackPtr)
 	C.duckdb_scalar_function_set_function(f.data(), callback)
@@ -2668,6 +2826,22 @@ func RegisterScalarFunction(conn Connection, f ScalarFunction) State {
 func ScalarFunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
 	ptr := C.duckdb_scalar_function_get_extra_info(info.data())
 	return unsafe.Pointer(ptr)
+}
+
+func ScalarFunctionGetBindData(info FunctionInfo) unsafe.Pointer {
+	ptr := C.duckdb_scalar_function_get_bind_data(info.data())
+	return unsafe.Pointer(ptr)
+}
+
+// ScalarFunctionGetClientContext wraps duckdb_scalar_function_get_client_context.
+// The return value must be destroyed with DestroyClientContext.
+func ScalarFunctionGetClientContext(info BindInfo, outCtx *ClientContext) {
+	var ctx C.duckdb_client_context
+	C.duckdb_scalar_function_get_client_context(info.data(), &ctx)
+	outCtx.Ptr = unsafe.Pointer(ctx)
+	if debugMode {
+		incrAllocCount("ctx")
+	}
 }
 
 func ScalarFunctionSetError(info FunctionInfo, err string) {
@@ -2693,11 +2867,11 @@ func CreateScalarFunctionSet(name string) ScalarFunctionSet {
 
 // DestroyScalarFunctionSet wraps duckdb_destroy_scalar_function_set.
 func DestroyScalarFunctionSet(set *ScalarFunctionSet) {
-	if debugMode {
-		decrAllocCount("scalarFuncSet")
-	}
 	if set.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("scalarFuncSet")
 	}
 	data := set.data()
 	C.duckdb_destroy_scalar_function_set(&data)
@@ -2710,6 +2884,38 @@ func AddScalarFunctionToSet(set ScalarFunctionSet, f ScalarFunction) State {
 
 func RegisterScalarFunctionSet(conn Connection, f ScalarFunctionSet) State {
 	return C.duckdb_register_scalar_function_set(conn.data(), f.data())
+}
+
+// ------------------------------------------------------------------ //
+// Selection Vector Functions
+// ------------------------------------------------------------------ //
+
+// CreateSelectionVector wraps duckdb_create_selection_vector.
+// The return value must be destroyed with DestroySelectionVector.
+func CreateSelectionVector(size IdxT) SelectionVector {
+	sel := C.duckdb_create_selection_vector(size)
+	if debugMode {
+		incrAllocCount("sel")
+	}
+	return SelectionVector{
+		Ptr: unsafe.Pointer(sel),
+	}
+}
+
+// DestroySelectionVector wraps duckdb_destroy_selection_vector.
+func DestroySelectionVector(sel *SelectionVector) {
+	if sel.Ptr == nil {
+		return
+	}
+	if debugMode {
+		decrAllocCount("sel")
+	}
+	C.duckdb_destroy_selection_vector(sel.data())
+	sel.Ptr = nil
+}
+
+func SelectionVectorGetDataPtr(sel SelectionVector) *SelT {
+	return C.duckdb_selection_vector_get_data_ptr(sel.data())
 }
 
 // ------------------------------------------------------------------ //
@@ -2752,11 +2958,11 @@ func CreateTableFunction() TableFunction {
 
 // DestroyTableFunction wraps duckdb_destroy_table_function.
 func DestroyTableFunction(f *TableFunction) {
-	if debugMode {
-		decrAllocCount("tableFunc")
-	}
 	if f.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("tableFunc")
 	}
 	data := f.data()
 	C.duckdb_destroy_table_function(&data)
@@ -3085,11 +3291,11 @@ func AppenderClose(appender Appender) State {
 
 // AppenderDestroy wraps duckdb_appender_destroy.
 func AppenderDestroy(appender *Appender) State {
-	if debugMode {
-		decrAllocCount("appender")
-	}
 	if appender.Ptr == nil {
 		return StateSuccess
+	}
+	if debugMode {
+		decrAllocCount("appender")
 	}
 	data := appender.data()
 	state := C.duckdb_appender_destroy(&data)
@@ -3186,11 +3392,11 @@ func TableDescriptionCreateExt(conn Connection, catalog string, schema string, t
 
 // TableDescriptionDestroy wraps duckdb_table_description_destroy.
 func TableDescriptionDestroy(desc *TableDescription) {
-	if debugMode {
-		decrAllocCount("tableDesc")
-	}
 	if desc.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("tableDesc")
 	}
 	data := desc.data()
 	C.duckdb_table_description_destroy(&data)
@@ -3251,11 +3457,11 @@ func QueryArrowError(arrow Arrow) string {
 
 // DestroyArrow wraps duckdb_destroy_arrow.
 func DestroyArrow(arrow *Arrow) {
-	if debugMode {
-		decrAllocCount("arrow")
-	}
 	if arrow.Ptr == nil {
 		return
+	}
+	if debugMode {
+		decrAllocCount("arrow")
 	}
 	data := arrow.data()
 	C.duckdb_destroy_arrow(&data)

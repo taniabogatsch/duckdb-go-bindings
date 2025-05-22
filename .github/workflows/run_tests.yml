@@ -59,7 +59,7 @@ jobs:
             filename: "libduckdb-linux-amd64"
             filepath: "LD_LIBRARY_PATH"
           - os: "ubuntu-24.04-arm"
-            filename: "libduckdb-linux-aarch64"
+            filename: "libduckdb-linux-arm64"
             filepath: "LD_LIBRARY_PATH"
       fail-fast: false
     steps:
