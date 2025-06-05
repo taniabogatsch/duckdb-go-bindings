@@ -8,5 +8,6 @@ import (
 
 // TestVectorSize ensures that linking works.
 func TestVectorSize(t *testing.T) {
+	defer VerifyAllocationCounters()
 	require.Equal(t, IdxT(2048), VectorSize())
 }
