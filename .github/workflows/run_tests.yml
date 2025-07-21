@@ -26,8 +26,6 @@ jobs:
             dir: "linux-arm64"
           - os: "windows-latest"
             dir: "windows-amd64"
-          - os: "ubuntu-latest"
-            dir: "custom-duckdb-linux-amd64"
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
