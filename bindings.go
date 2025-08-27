@@ -3260,15 +3260,6 @@ func AppenderCreateExt(conn Connection, catalog string, schema string, table str
 	return state
 }
 
-type Foo struct {
-	x int
-}
-
-func bar() *Foo {
-	var f Foo
-	return &f
-}
-
 func AppenderColumnCount(appender Appender) IdxT {
 	return C.duckdb_appender_column_count(appender.data())
 }
