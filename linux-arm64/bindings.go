@@ -8,7 +8,6 @@ import "C"
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 	"unsafe"
 )
@@ -2316,7 +2315,7 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 // CreateUnionType wraps duckdb_create_union_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateUnionType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types, nil)
+	t := allocLogicalTypes(types)
 	defer Free(t)
 	typesPtr := (*C.duckdb_logical_type)(t)
 
@@ -2342,7 +2341,7 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 // CreateStructType wraps duckdb_create_struct_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types, nil)
+	t := allocLogicalTypes(types)
 	defer Free(t)
 	typesPtr := (*C.duckdb_logical_type)(t)
 
@@ -2551,10 +2550,10 @@ func RegisterLogicalType(conn Connection, logicalType LogicalType, info CreateTy
 
 // CreateDataChunk wraps duckdb_create_data_chunk.
 // The return value must be destroyed with DestroyDataChunk.
-func CreateDataChunk(types []LogicalType, logFn func(map[string]any)) DataChunk {
+func CreateDataChunk(types []LogicalType) DataChunk {
 	count := len(types)
 
-	s := allocLogicalTypes(types, logFn)
+	s := allocLogicalTypes(types)
 	typesPtr := (*C.duckdb_logical_type)(s)
 	defer Free(unsafe.Pointer(typesPtr))
 
@@ -3552,24 +3551,13 @@ const (
 )
 
 // The return value must be freed with Free.
-func allocLogicalTypes(types []LogicalType, logFn func(map[string]any)) unsafe.Pointer {
+func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
 	count := len(types)
 	s := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
 	for i, t := range types {
 		// We only copy the pointers.
 		// The memory is allocated in the types slice.
-		logs := map[string]any{}
-		logs["type_ptr_t_"+strconv.Itoa(i)] = t
-		logs["type_ptr_types_"+strconv.Itoa(i)] = types[i]
-		if logFn != nil {
-			logFn(logs)
-		}
 		ptr := t.data()
-		logs = map[string]any{}
-		logs["ptr_"+strconv.Itoa(i)] = ptr
-		if logFn != nil {
-			logFn(logs)
-		}
 		(*s)[i] = ptr
 	}
 
