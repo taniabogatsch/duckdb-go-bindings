@@ -2,6 +2,7 @@ package duckdb_go_bindings
 
 /*
 #include <duckdb.h>
+#include <stdlib.h>
 */
 import "C"
 
@@ -3553,7 +3554,7 @@ const (
 // The return value must be freed with Free.
 func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
 	count := len(types)
-	s := (*[1 << 31]C.duckdb_logical_type)(C.malloc(C.size_t(count) * logicalTypeSize))
+	s := (*[1 << 31]C.duckdb_logical_type)(C.calloc(C.size_t(count), logicalTypeSize))
 	for i, t := range types {
 		// We only copy the pointers.
 		// The memory is allocated in the types slice.
@@ -3566,7 +3567,7 @@ func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
 // The return value must be freed with Free.
 func allocValues(values []Value) unsafe.Pointer {
 	count := len(values)
-	s := (*[1 << 31]C.duckdb_value)(C.malloc(C.size_t(count) * valueSize))
+	s := (*[1 << 31]C.duckdb_value)(C.calloc(C.size_t(count), valueSize))
 	for i, val := range values {
 		// We only copy the pointers.
 		// The memory is allocated in the values slice.
@@ -3580,7 +3581,7 @@ func allocValues(values []Value) unsafe.Pointer {
 // The names must also be freed.
 func allocNames(names []string) unsafe.Pointer {
 	count := len(names)
-	s := (*[1 << 31]*C.char)(C.malloc(C.size_t(count) * charSize))
+	s := (*[1 << 31]*C.char)(C.calloc(C.size_t(count), charSize))
 	for i, name := range names {
 		(*s)[i] = C.CString(name)
 	}
