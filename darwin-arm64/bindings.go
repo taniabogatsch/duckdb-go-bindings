@@ -12,6 +12,16 @@ void duckdb_go_bindinds_set_value(duckdb_value *values_ptr, duckdb_value value, 
 	values_ptr[index] = value;
 }
 
+void duckdb_go_bindinds_set_name(char **names, char *name, idx_t index) {
+	names[index] = name;
+}
+
+void duckdb_go_bindinds_free_names(char **names, idx_t count) {
+	for (idx_t i = 0; i < count; i++) {
+		duckdb_free(names[i]);
+	}
+}
+
 bool duckdb_go_bindings_is_valid(uint64_t *mask_ptr, idx_t index) {
 	idx_t entry_idx = index / 64;
 	idx_t idx_in_entry = index % 64;
@@ -2324,16 +2334,13 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 	typesPtr := allocLogicalTypes(types)
 	defer Free(unsafe.Pointer(typesPtr))
 
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the STRUCT type.
-	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, IdxT(len(types)))
-	for i := 0; i < len(types); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	count := IdxT(len(types))
+	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, count)
+	C.duckdb_go_bindinds_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2349,17 +2356,13 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 	typesPtr := allocLogicalTypes(types)
 	defer Free(unsafe.Pointer(typesPtr))
 
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the STRUCT type.
 	count := IdxT(len(types))
 	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, count)
-	for i := 0; i < len(types); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	C.duckdb_go_bindinds_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2372,16 +2375,13 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 // CreateEnumType wraps duckdb_create_enum_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateEnumType(names []string) LogicalType {
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the ENUM type.
-	logicalType := C.duckdb_create_enum_type(namesPtr, IdxT(len(names)))
-	for i := 0; i < len(names); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	count := IdxT(len(names))
+	logicalType := C.duckdb_create_enum_type(namesPtr, count)
+	C.duckdb_go_bindinds_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -3573,14 +3573,14 @@ func allocValues(values []Value) *C.duckdb_value {
 
 // The return value must be freed with Free.
 // The names must also be freed.
-func allocNames(names []string) unsafe.Pointer {
+func allocNames(names []string) **C.char {
 	count := len(names)
-	s := (*[1 << 31]*C.char)(C.calloc(C.size_t(count), charSize))
+	namesPtr := (**C.char)(C.calloc(C.size_t(count), charSize))
 	for i, name := range names {
-		(*s)[i] = C.CString(name)
+		C.duckdb_go_bindinds_set_name(namesPtr, C.CString(name), IdxT(i))
 	}
 
-	return unsafe.Pointer(s)
+	return namesPtr
 }
 
 // ------------------------------------------------------------------ //
