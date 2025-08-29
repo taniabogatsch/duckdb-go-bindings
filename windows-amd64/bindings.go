@@ -7,6 +7,14 @@ package duckdb_go_bindings
 void duckdb_go_bindinds_set_logical_type(duckdb_logical_type *types_ptr, duckdb_logical_type type, idx_t index) {
 	types_ptr[index] = type;
 }
+
+bool duckdb_go_bindings_is_valid(uint64_t *mask_ptr, idx_t index) {
+	idx_t entry_idx = index / 64;
+	idx_t idx_in_entry = index % 64;
+	idx_t base = 1;
+	idx_t is_valid = mask_ptr[entry_idx] & (base << idx_in_entry);
+	return is_valid != 0;
+}
 */
 import "C"
 
@@ -3538,11 +3546,8 @@ func ArrowScan(conn Connection, table string, stream ArrowStream) State {
 // ------------------------------------------------------------------ //
 
 func ValidityMaskValueIsValid(maskPtr unsafe.Pointer, index IdxT) bool {
-	entryIdx := index / 64
-	idxInEntry := index % 64
-	slice := (*[1 << 31]C.uint64_t)(maskPtr)
-	isValid := slice[entryIdx] & (C.uint64_t(1) << idxInEntry)
-	return uint64(isValid) != 0
+	castMaskPtr := (*C.uint64_t)(maskPtr)
+	return bool(C.duckdb_go_bindings_is_valid(castMaskPtr, index))
 }
 
 const (
