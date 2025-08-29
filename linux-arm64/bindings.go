@@ -3,6 +3,10 @@ package duckdb_go_bindings
 /*
 #include <duckdb.h>
 #include <stdlib.h>
+
+void duckdb_go_bindinds_set_logical_type(duckdb_logical_type *types_ptr, duckdb_logical_type type, idx_t index) {
+	types_ptr[index] = type;
+}
 */
 import "C"
 
@@ -2316,9 +2320,8 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 // CreateUnionType wraps duckdb_create_union_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateUnionType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types)
-	defer Free(t)
-	typesPtr := (*C.duckdb_logical_type)(t)
+	typesPtr := allocLogicalTypes(types)
+	defer Free(unsafe.Pointer(typesPtr))
 
 	n := allocNames(names)
 	defer Free(n)
@@ -2342,9 +2345,8 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 // CreateStructType wraps duckdb_create_struct_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types)
-	defer Free(t)
-	typesPtr := (*C.duckdb_logical_type)(t)
+	typesPtr := allocLogicalTypes(types)
+	defer Free(unsafe.Pointer(typesPtr))
 
 	n := allocNames(names)
 	defer Free(n)
@@ -2352,7 +2354,8 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
 
 	// Create the STRUCT type.
-	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, IdxT(len(types)))
+	count := IdxT(len(types))
+	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, count)
 	for i := 0; i < len(types); i++ {
 		Free(unsafe.Pointer((*namesSlice)[i]))
 	}
@@ -2552,13 +2555,10 @@ func RegisterLogicalType(conn Connection, logicalType LogicalType, info CreateTy
 // CreateDataChunk wraps duckdb_create_data_chunk.
 // The return value must be destroyed with DestroyDataChunk.
 func CreateDataChunk(types []LogicalType) DataChunk {
-	count := len(types)
-
-	s := allocLogicalTypes(types)
-	typesPtr := (*C.duckdb_logical_type)(s)
+	typesPtr := allocLogicalTypes(types)
 	defer Free(unsafe.Pointer(typesPtr))
 
-	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(count))
+	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(len(types)))
 	if debugMode {
 		incrAllocCount("chunk")
 	}
@@ -3552,17 +3552,14 @@ const (
 )
 
 // The return value must be freed with Free.
-func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
+func allocLogicalTypes(types []LogicalType) *C.duckdb_logical_type {
 	count := len(types)
-	s := (*[1 << 31]C.duckdb_logical_type)(C.calloc(C.size_t(count), logicalTypeSize))
+	typesPtr := (*C.duckdb_logical_type)(C.calloc(C.size_t(count), logicalTypeSize))
 	for i, t := range types {
-		// We only copy the pointers.
-		// The memory is allocated in the types slice.
-		ptr := t.data()
-		(*s)[i] = ptr
+		C.duckdb_go_bindinds_set_logical_type(typesPtr, t.data(), IdxT(i))
 	}
 
-	return unsafe.Pointer(s)
+	return typesPtr
 }
 
 // The return value must be freed with Free.
