@@ -6,7 +6,9 @@ package duckdb_go_bindings
 bool duckdb_go_bindings_is_valid(uint64_t *mask_ptr, idx_t index) {
 	idx_t entry_idx = index / 64;
 	idx_t idx_in_entry = index % 64;
-	return mask_ptr[entry_idx] & (1 << idx_in_entry);
+	idx_t base = 1;
+	idx_t is_valid = mask_ptr[entry_idx] & (base << idx_in_entry);
+	return is_valid != 0;
 }
 */
 import "C"
