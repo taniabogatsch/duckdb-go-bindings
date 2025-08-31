@@ -2320,10 +2320,11 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 	namesPtr := allocNames(names)
 	defer Free(unsafe.Pointer(namesPtr))
 
-	// Create the STRUCT type.
 	count := IdxT(len(types))
+	defer C.duckdb_go_bindings_free_names(namesPtr, count)
+
+	// Create the STRUCT type.
 	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, count)
-	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2342,10 +2343,11 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 	namesPtr := allocNames(names)
 	defer Free(unsafe.Pointer(namesPtr))
 
-	// Create the STRUCT type.
 	count := IdxT(len(types))
+	defer C.duckdb_go_bindings_free_names(namesPtr, count)
+
+	// Create the STRUCT type.
 	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, count)
-	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2361,10 +2363,11 @@ func CreateEnumType(names []string) LogicalType {
 	namesPtr := allocNames(names)
 	defer Free(unsafe.Pointer(namesPtr))
 
-	// Create the ENUM type.
 	count := IdxT(len(names))
+	defer C.duckdb_go_bindings_free_names(namesPtr, count)
+
+	// Create the ENUM type.
 	logicalType := C.duckdb_create_enum_type(namesPtr, count)
-	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
