@@ -3,14 +3,7 @@ package duckdb_go_bindings
 /*
 #include <duckdb.h>
 #include <stdlib.h>
-
-bool duckdb_go_bindings_is_valid(uint64_t *mask_ptr, idx_t index) {
-	idx_t entry_idx = index / 64;
-	idx_t idx_in_entry = index % 64;
-	idx_t base = 1;
-	idx_t is_valid = mask_ptr[entry_idx] & (base << idx_in_entry);
-	return is_valid != 0;
-}
+#include <duckdb_go_bindings.h>
 */
 import "C"
 
@@ -2080,14 +2073,15 @@ func GetVarchar(v Value) string {
 // CreateStructValue wraps duckdb_create_struct_value.
 // The return value must be destroyed with DestroyValue.
 func CreateStructValue(logicalType LogicalType, values []Value) Value {
-	s := allocValues(values)
-	defer Free(s)
-	valuesPtr := (*C.duckdb_value)(s)
+	valuesPtr := allocValues(values)
+	defer Free(unsafe.Pointer(valuesPtr))
 
 	v := C.duckdb_create_struct_value(logicalType.data(), valuesPtr)
+
 	if debugMode {
 		incrAllocCount("v")
 	}
+
 	return Value{
 		Ptr: unsafe.Pointer(v),
 	}
@@ -2096,16 +2090,15 @@ func CreateStructValue(logicalType LogicalType, values []Value) Value {
 // CreateListValue wraps duckdb_create_list_value.
 // The return value must be destroyed with DestroyValue.
 func CreateListValue(logicalType LogicalType, values []Value) Value {
-	count := IdxT(len(values))
+	valuesPtr := allocValues(values)
+	defer Free(unsafe.Pointer(valuesPtr))
 
-	s := allocValues(values)
-	defer Free(s)
-	valuesPtr := (*C.duckdb_value)(s)
+	v := C.duckdb_create_list_value(logicalType.data(), valuesPtr, IdxT(len(values)))
 
-	v := C.duckdb_create_list_value(logicalType.data(), valuesPtr, count)
 	if debugMode {
 		incrAllocCount("v")
 	}
+
 	return Value{
 		Ptr: unsafe.Pointer(v),
 	}
@@ -2114,16 +2107,15 @@ func CreateListValue(logicalType LogicalType, values []Value) Value {
 // CreateArrayValue wraps duckdb_create_array_value.
 // The return value must be destroyed with DestroyValue.
 func CreateArrayValue(logicalType LogicalType, values []Value) Value {
-	count := IdxT(len(values))
+	valuesPtr := allocValues(values)
+	defer Free(unsafe.Pointer(valuesPtr))
 
-	s := allocValues(values)
-	defer Free(s)
-	valuesPtr := (*C.duckdb_value)(s)
+	v := C.duckdb_create_array_value(logicalType.data(), valuesPtr, IdxT(len(values)))
 
-	v := C.duckdb_create_array_value(logicalType.data(), valuesPtr, count)
 	if debugMode {
 		incrAllocCount("v")
 	}
+
 	return Value{
 		Ptr: unsafe.Pointer(v),
 	}
@@ -2132,20 +2124,18 @@ func CreateArrayValue(logicalType LogicalType, values []Value) Value {
 // CreateMapValue wraps duckdb_create_map_value.
 // The return value must be destroyed with DestroyValue.
 func CreateMapValue(logicalType LogicalType, keys []Value, values []Value) Value {
-	count := IdxT(len(keys))
+	keyValuesPtr := allocValues(values)
+	defer Free(unsafe.Pointer(keyValuesPtr))
 
-	k := allocValues(keys)
-	defer Free(k)
-	keysPtr := (*C.duckdb_value)(k)
+	valueValuesPtr := allocValues(values)
+	defer Free(unsafe.Pointer(valueValuesPtr))
 
-	v := allocValues(values)
-	defer Free(v)
-	valuesPtr := (*C.duckdb_value)(v)
+	m := C.duckdb_create_map_value(logicalType.data(), keyValuesPtr, valueValuesPtr, IdxT(len(keys)))
 
-	m := C.duckdb_create_map_value(logicalType.data(), keysPtr, valuesPtr, count)
 	if debugMode {
 		incrAllocCount("v")
 	}
+
 	return Value{
 		Ptr: unsafe.Pointer(m),
 	}
@@ -2324,20 +2314,16 @@ func CreateMapType(key LogicalType, value LogicalType) LogicalType {
 // CreateUnionType wraps duckdb_create_union_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateUnionType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types)
-	defer Free(t)
-	typesPtr := (*C.duckdb_logical_type)(t)
+	typesPtr := allocLogicalTypes(types)
+	defer Free(unsafe.Pointer(typesPtr))
 
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the STRUCT type.
-	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, IdxT(len(types)))
-	for i := 0; i < len(types); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	count := IdxT(len(types))
+	logicalType := C.duckdb_create_union_type(typesPtr, namesPtr, count)
+	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2350,20 +2336,16 @@ func CreateUnionType(types []LogicalType, names []string) LogicalType {
 // CreateStructType wraps duckdb_create_struct_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateStructType(types []LogicalType, names []string) LogicalType {
-	t := allocLogicalTypes(types)
-	defer Free(t)
-	typesPtr := (*C.duckdb_logical_type)(t)
+	typesPtr := allocLogicalTypes(types)
+	defer Free(unsafe.Pointer(typesPtr))
 
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the STRUCT type.
-	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, IdxT(len(types)))
-	for i := 0; i < len(types); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	count := IdxT(len(types))
+	logicalType := C.duckdb_create_struct_type(typesPtr, namesPtr, count)
+	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2376,16 +2358,13 @@ func CreateStructType(types []LogicalType, names []string) LogicalType {
 // CreateEnumType wraps duckdb_create_enum_type.
 // The return value must be destroyed with DestroyLogicalType.
 func CreateEnumType(names []string) LogicalType {
-	n := allocNames(names)
-	defer Free(n)
-	namesSlice := (*[1 << 31]*C.char)(n)
-	namesPtr := (**C.char)(unsafe.Pointer(namesSlice))
+	namesPtr := allocNames(names)
+	defer Free(unsafe.Pointer(namesPtr))
 
 	// Create the ENUM type.
-	logicalType := C.duckdb_create_enum_type(namesPtr, IdxT(len(names)))
-	for i := 0; i < len(names); i++ {
-		Free(unsafe.Pointer((*namesSlice)[i]))
-	}
+	count := IdxT(len(names))
+	logicalType := C.duckdb_create_enum_type(namesPtr, count)
+	C.duckdb_go_bindings_free_names(namesPtr, count)
 
 	if debugMode {
 		incrAllocCount("logicalType")
@@ -2560,16 +2539,14 @@ func RegisterLogicalType(conn Connection, logicalType LogicalType, info CreateTy
 // CreateDataChunk wraps duckdb_create_data_chunk.
 // The return value must be destroyed with DestroyDataChunk.
 func CreateDataChunk(types []LogicalType) DataChunk {
-	count := len(types)
-
-	s := allocLogicalTypes(types)
-	typesPtr := (*C.duckdb_logical_type)(s)
+	typesPtr := allocLogicalTypes(types)
 	defer Free(unsafe.Pointer(typesPtr))
 
-	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(count))
+	chunk := C.duckdb_create_data_chunk(typesPtr, IdxT(len(types)))
 	if debugMode {
 		incrAllocCount("chunk")
 	}
+
 	return DataChunk{
 		Ptr: unsafe.Pointer(chunk),
 	}
@@ -3557,41 +3534,40 @@ const (
 )
 
 // The return value must be freed with Free.
-func allocLogicalTypes(types []LogicalType) unsafe.Pointer {
+func allocLogicalTypes(types []LogicalType) *C.duckdb_logical_type {
 	count := len(types)
-	s := (*[1 << 31]C.duckdb_logical_type)(C.calloc(C.size_t(count), logicalTypeSize))
+	typesPtr := (*C.duckdb_logical_type)(C.calloc(C.size_t(count), logicalTypeSize))
+
 	for i, t := range types {
-		// We only copy the pointers.
-		// The memory is allocated in the types slice.
-		(*s)[i] = t.data()
+		C.duckdb_go_bindings_set_logical_type(typesPtr, t.data(), IdxT(i))
 	}
 
-	return unsafe.Pointer(s)
+	return typesPtr
 }
 
 // The return value must be freed with Free.
-func allocValues(values []Value) unsafe.Pointer {
+func allocValues(values []Value) *C.duckdb_value {
 	count := len(values)
-	s := (*[1 << 31]C.duckdb_value)(C.calloc(C.size_t(count), valueSize))
+	valuesPtr := (*C.duckdb_value)(C.calloc(C.size_t(count), valueSize))
+
 	for i, val := range values {
-		// We only copy the pointers.
-		// The memory is allocated in the values slice.
-		(*s)[i] = val.data()
+		C.duckdb_go_bindings_set_value(valuesPtr, val.data(), IdxT(i))
 	}
 
-	return unsafe.Pointer(s)
+	return valuesPtr
 }
 
 // The return value must be freed with Free.
 // The names must also be freed.
-func allocNames(names []string) unsafe.Pointer {
+func allocNames(names []string) **C.char {
 	count := len(names)
-	s := (*[1 << 31]*C.char)(C.calloc(C.size_t(count), charSize))
+	namesPtr := (**C.char)(C.calloc(C.size_t(count), charSize))
+
 	for i, name := range names {
-		(*s)[i] = C.CString(name)
+		C.duckdb_go_bindings_set_name(namesPtr, C.CString(name), IdxT(i))
 	}
 
-	return unsafe.Pointer(s)
+	return namesPtr
 }
 
 // ------------------------------------------------------------------ //
