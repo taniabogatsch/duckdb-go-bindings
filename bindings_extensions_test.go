@@ -10,7 +10,7 @@ import (
 func TestOpenSQLiteDB(t *testing.T) {
 	defer VerifyAllocationCounters()
 
-	dsn := "../test/pets.sqlite"
+	dsn := "test/pets.sqlite"
 
 	var config Config
 	defer DestroyConfig(&config)
@@ -44,4 +44,3 @@ func TestOpenSQLiteDB(t *testing.T) {
 	colType := ColumnType(&res, 0)
 	require.Equal(t, TypeBigInt, colType)
 }
-
