@@ -32,8 +32,11 @@ The main module (`github.com/duckdb/duckdb-go-bindings`) does not link any pre-b
 1. Create a new branch and update the `DUCKDB_VERSION` in the `Makefile`.
 2. Invoke the `Fetch and Push Libs` workflow on the new branch.
 3. Update the `Releases` table in the `README.md`.
-4. Open a PR, wait for all tests to pass, and then merge the PR into `main`.
-5. Publish the tags by incrementing the latest tagged release for the main module, and for each OS+architecture combination.
+4. If the header (`duckdb.h`) has changes (non-bugfix release), add all changes (new types, functions, etc.) to the bindings.
+5. Open a PR.
+6. Wait for all tests to pass.
+7. Merge the PR into `main`.
+8. Publish the tags by incrementing the latest tagged release for the main module, and for each OS+architecture combination.
 ```
 git tag <tagname>
 git push origin <tagname>
