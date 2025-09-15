@@ -7,10 +7,11 @@ This repository wraps DuckDB's C API calls in Go native types and functions.
 Minimum Go version: 1.24.
 
 #### 🚧 WORK IN PROGRESS 🚧
-```diff
-+ - Some type aliases and function wrappers are still missing.
-+ - Breaking changes can happen.
-```
+
+> [!IMPORTANT]  
+> Some type aliases and function wrappers are still missing.
+> 
+> Breaking changes can happen.
 
 ## Releases
 
