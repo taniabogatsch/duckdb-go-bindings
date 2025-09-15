@@ -232,8 +232,8 @@ type (
 // Helper functions for types without internal pointers:
 
 // NewDate sets the members of a duckdb_date.
-func NewDate(days int32) *Date {
-	return &Date{days: C.int32_t(days)}
+func NewDate(days int32) Date {
+	return Date{days: C.int32_t(days)}
 }
 
 // DateMembers returns the days of a duckdb_date.
@@ -242,8 +242,8 @@ func DateMembers(date *Date) int32 {
 }
 
 // NewDateStruct sets the members of a duckdb_date_struct.
-func NewDateStruct(year int32, month int8, day int8) *DateStruct {
-	return &DateStruct{
+func NewDateStruct(year int32, month int8, day int8) DateStruct {
+	return DateStruct{
 		year:  C.int32_t(year),
 		month: C.int8_t(month),
 		day:   C.int8_t(day),
@@ -256,8 +256,8 @@ func DateStructMembers(date *DateStruct) (int32, int8, int8) {
 }
 
 // NewTime sets the members of a duckdb_time.
-func NewTime(micros int64) *Time {
-	return &Time{micros: C.int64_t(micros)}
+func NewTime(micros int64) Time {
+	return Time{micros: C.int64_t(micros)}
 }
 
 // TimeMembers returns the micros of a duckdb_time.
@@ -266,8 +266,8 @@ func TimeMembers(ti *Time) int64 {
 }
 
 // NewTimeStruct sets the members of a duckdb_time_struct.
-func NewTimeStruct(hour int8, min int8, sec int8, micros int32) *TimeStruct {
-	return &TimeStruct{
+func NewTimeStruct(hour int8, min int8, sec int8, micros int32) TimeStruct {
+	return TimeStruct{
 		hour:   C.int8_t(hour),
 		min:    C.int8_t(min),
 		sec:    C.int8_t(sec),
@@ -281,8 +281,8 @@ func TimeStructMembers(ti *TimeStruct) (int8, int8, int8, int32) {
 }
 
 // NewTimeTZ sets the members of a duckdb_time_tz.
-func NewTimeTZ(bits uint64) *TimeTZ {
-	return &TimeTZ{bits: C.uint64_t(bits)}
+func NewTimeTZ(bits uint64) TimeTZ {
+	return TimeTZ{bits: C.uint64_t(bits)}
 }
 
 // TimeTZMembers returns the bits of a duckdb_time_tz.
@@ -291,8 +291,8 @@ func TimeTZMembers(ti *TimeTZ) uint64 {
 }
 
 // NewTimeTZStruct sets the members of a duckdb_time_tz_struct.
-func NewTimeTZStruct(ti TimeStruct, offset int32) *TimeTZStruct {
-	return &TimeTZStruct{
+func NewTimeTZStruct(ti TimeStruct, offset int32) TimeTZStruct {
+	return TimeTZStruct{
 		time:   ti,
 		offset: C.int32_t(offset),
 	}
@@ -304,8 +304,8 @@ func TimeTZStructMembers(ti *TimeTZStruct) (TimeStruct, int32) {
 }
 
 // NewTimestamp sets the members of a duckdb_timestamp.
-func NewTimestamp(micros int64) *Timestamp {
-	return &Timestamp{micros: C.int64_t(micros)}
+func NewTimestamp(micros int64) Timestamp {
+	return Timestamp{micros: C.int64_t(micros)}
 }
 
 // TimestampMembers returns the micros of a duckdb_timestamp.
@@ -314,8 +314,8 @@ func TimestampMembers(ts *Timestamp) int64 {
 }
 
 // NewTimestampS sets the members of a duckdb_timestamp_s.
-func NewTimestampS(seconds int64) *TimestampS {
-	return &TimestampS{seconds: C.int64_t(seconds)}
+func NewTimestampS(seconds int64) TimestampS {
+	return TimestampS{seconds: C.int64_t(seconds)}
 }
 
 // TimestampSMembers returns the seconds of a duckdb_timestamp_s.
@@ -324,8 +324,8 @@ func TimestampSMembers(ts *TimestampS) int64 {
 }
 
 // NewTimestampMS sets the members of a duckdb_timestamp_ms.
-func NewTimestampMS(millis int64) *TimestampMS {
-	return &TimestampMS{millis: C.int64_t(millis)}
+func NewTimestampMS(millis int64) TimestampMS {
+	return TimestampMS{millis: C.int64_t(millis)}
 }
 
 // TimestampMSMembers returns the millis of a duckdb_timestamp_ms.
@@ -334,8 +334,8 @@ func TimestampMSMembers(ts *TimestampMS) int64 {
 }
 
 // NewTimestampNS sets the members of a duckdb_timestamp_ns.
-func NewTimestampNS(nanos int64) *TimestampNS {
-	return &TimestampNS{nanos: C.int64_t(nanos)}
+func NewTimestampNS(nanos int64) TimestampNS {
+	return TimestampNS{nanos: C.int64_t(nanos)}
 }
 
 // TimestampNSMembers returns the nanos of a duckdb_timestamp_ns.
@@ -344,8 +344,8 @@ func TimestampNSMembers(ts *TimestampNS) int64 {
 }
 
 // NewTimestampStruct sets the members of a duckdb_timestamp_struct.
-func NewTimestampStruct(date DateStruct, ti TimeStruct) *TimestampStruct {
-	return &TimestampStruct{
+func NewTimestampStruct(date DateStruct, ti TimeStruct) TimestampStruct {
+	return TimestampStruct{
 		date: date,
 		time: ti,
 	}
@@ -357,8 +357,8 @@ func TimestampStructMembers(ts *TimestampStruct) (DateStruct, TimeStruct) {
 }
 
 // NewInterval sets the members of a duckdb_interval.
-func NewInterval(months int32, days int32, micros int64) *Interval {
-	return &Interval{
+func NewInterval(months int32, days int32, micros int64) Interval {
+	return Interval{
 		months: C.int32_t(months),
 		days:   C.int32_t(days),
 		micros: C.int64_t(micros),
@@ -371,8 +371,8 @@ func IntervalMembers(i *Interval) (int32, int32, int64) {
 }
 
 // NewHugeInt sets the members of a duckdb_hugeint.
-func NewHugeInt(lower uint64, upper int64) *HugeInt {
-	return &HugeInt{
+func NewHugeInt(lower uint64, upper int64) HugeInt {
+	return HugeInt{
 		lower: C.uint64_t(lower),
 		upper: C.int64_t(upper),
 	}
@@ -384,8 +384,8 @@ func HugeIntMembers(hi *HugeInt) (uint64, int64) {
 }
 
 // NewUHugeInt sets the members of a duckdb_uhugeint.
-func NewUHugeInt(lower uint64, upper uint64) *UHugeInt {
-	return &UHugeInt{
+func NewUHugeInt(lower uint64, upper uint64) UHugeInt {
+	return UHugeInt{
 		lower: C.uint64_t(lower),
 		upper: C.uint64_t(upper),
 	}
@@ -397,8 +397,8 @@ func UHugeIntMembers(hi *UHugeInt) (uint64, uint64) {
 }
 
 // NewDecimal sets the members of a duckdb_decimal.
-func NewDecimal(width uint8, scale uint8, hi HugeInt) *Decimal {
-	return &Decimal{
+func NewDecimal(width uint8, scale uint8, hi HugeInt) Decimal {
+	return Decimal{
 		width: C.uint8_t(width),
 		scale: C.uint8_t(scale),
 		value: hi,
@@ -411,8 +411,8 @@ func DecimalMembers(d *Decimal) (uint8, uint8, HugeInt) {
 }
 
 // NewQueryProgressType sets the members of a duckdb_query_progress_type.
-func NewQueryProgressType(percentage float64, rowsProcessed uint64, totalRowsToProcess uint64) *QueryProgressType {
-	return &QueryProgressType{
+func NewQueryProgressType(percentage float64, rowsProcessed uint64, totalRowsToProcess uint64) QueryProgressType {
+	return QueryProgressType{
 		percentage:            C.double(percentage),
 		rows_processed:        C.uint64_t(rowsProcessed),
 		total_rows_to_process: C.uint64_t(totalRowsToProcess),
@@ -425,8 +425,8 @@ func QueryProgressTypeMembers(q *QueryProgressType) (float64, uint64, uint64) {
 }
 
 // NewListEntry sets the members of a duckdb_list_entry.
-func NewListEntry(offset uint64, length uint64) *ListEntry {
-	return &ListEntry{
+func NewListEntry(offset uint64, length uint64) ListEntry {
+	return ListEntry{
 		offset: C.uint64_t(offset),
 		length: C.uint64_t(length),
 	}
