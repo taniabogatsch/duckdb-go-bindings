@@ -57,7 +57,7 @@ const (
 	TypeTimeTZ      Type = C.DUCKDB_TYPE_TIME_TZ
 	TypeTimestampTZ Type = C.DUCKDB_TYPE_TIMESTAMP_TZ
 	TypeAny         Type = C.DUCKDB_TYPE_ANY
-	TypeVarInt      Type = C.DUCKDB_TYPE_VARINT
+	TypeBigNum      Type = C.DUCKDB_TYPE_BIGNUM
 	TypeSQLNull     Type = C.DUCKDB_TYPE_SQLNULL
 )
 
@@ -219,10 +219,10 @@ type (
 	// Use the respective Bit functions to access / write to this type.
 	// This type must be destroyed with DestroyBit.
 	Bit = C.duckdb_bit
-	// VarInt does not export New and Members.
-	// Use the respective VarInt functions to access / write to this type.
-	// This type must be destroyed with DestroyVarInt.
-	VarInt = C.duckdb_varint
+	// BigNum does not export New and Members.
+	// Use the respective BigNum functions to access / write to this type.
+	// This type must be destroyed with DestroyBigNum.
+	BigNum = C.duckdb_bignum
 )
 
 // TODO:
@@ -463,13 +463,13 @@ func DestroyBit(b *Bit) {
 	b = nil
 }
 
-// DestroyVarInt destroys the data field of duckdb_varint.
-func DestroyVarInt(i *VarInt) {
+// DestroyBigNum destroys the data field of duckdb_bignum.
+func DestroyBigNum(i *BigNum) {
 	if i == nil {
 		return
 	}
 	if debugMode {
-		decrAllocCount("varInt")
+		decrAllocCount("bigNum")
 	}
 	Free(unsafe.Pointer(i.data))
 	i = nil
@@ -1723,10 +1723,10 @@ func CreateUHugeInt(val UHugeInt) Value {
 	}
 }
 
-// CreateVarint wraps duckdb_create_varint.
+// CreateBigNum wraps duckdb_create_bignum.
 // The return value must be destroyed with DestroyValue.
-func CreateVarint(val VarInt) Value {
-	v := C.duckdb_create_varint(val)
+func CreateBigNum(val BigNum) Value {
+	v := C.duckdb_create_bignum(val)
 	if debugMode {
 		incrAllocCount("v")
 	}
@@ -1971,13 +1971,13 @@ func GetUHugeInt(v Value) UHugeInt {
 	return C.duckdb_get_uhugeint(v.data())
 }
 
-// GetVarInt wraps duckdb_get_varint.
-// The return value must be destroyed with DestroyVarInt.
-func GetVarInt(v Value) VarInt {
+// GetBigNum wraps duckdb_get_bignum.
+// The return value must be destroyed with DestroyBigNum.
+func GetBigNum(v Value) BigNum {
 	if debugMode {
-		incrAllocCount("varInt")
+		incrAllocCount("bigNum")
 	}
-	return C.duckdb_get_varint(v.data())
+	return C.duckdb_get_bignum(v.data())
 }
 
 func GetDecimal(v Value) Decimal {
