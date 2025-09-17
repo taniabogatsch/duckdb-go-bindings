@@ -13,7 +13,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        version: [1.23, 1.24]
+        version: [1.24]
         os: [macos-13, macos-14, ubuntu-latest, ubuntu-24.04-arm, windows-latest]
         include:
           - os: "macos-13"
@@ -46,7 +46,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        version: [1.23, 1.24]
+        version: [1.24]
         os: [macos-13, macos-14, ubuntu-latest, ubuntu-24.04-arm]
         include:
           - os: "macos-13"
@@ -83,7 +83,7 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        version: [1.23, 1.24]
+        version: [1.24]
         os: [macos-13, macos-14, ubuntu-latest, ubuntu-24.04-arm]
         # FIXME: Archive these into a single libduckdb_static.a (similar to DuckDB's bundle-library target).
         include:
