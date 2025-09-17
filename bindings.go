@@ -984,11 +984,11 @@ func ConnectionGetClientContext(conn Connection, outCtx *ClientContext) {
 }
 
 // ConnectionGetArrowOptions wraps duckdb_connection_get_arrow_options.
-// outArrowOptions must be destroyed with DestroyArrowOptions.
-func ConnectionGetArrowOptions(conn Connection, outArrowOptions *ArrowOptions) {
+// outOptions must be destroyed with DestroyArrowOptions.
+func ConnectionGetArrowOptions(conn Connection, outOptions *ArrowOptions) {
 	var options C.duckdb_arrow_options
 	C.duckdb_connection_get_arrow_options(conn.data(), &options)
-	outArrowOptions.Ptr = unsafe.Pointer(options)
+	outOptions.Ptr = unsafe.Pointer(options)
 	if debugMode {
 		incrAllocCount("arrowOptions")
 	}
@@ -1104,6 +1104,7 @@ func DestroyConfig(config *Config) {
 func CreateErrorData(t ErrorType, msg string) ErrorData {
 	cMsg := C.CString(msg)
 	defer Free(unsafe.Pointer(cMsg))
+
 	errorData := C.duckdb_create_error_data(t, cMsg)
 	if debugMode {
 		incrAllocCount("errorData")
@@ -3821,12 +3822,16 @@ func ExpressionIsFoldable(expr Expression) bool {
 	return bool(C.duckdb_expression_is_foldable(expr.data()))
 }
 
+// ExpressionFold wraps duckdb_expression_fold.
+// outValue must be destroyed with DestroyValue.
+// The return value must be destroyed with DestroyErrorData.
 func ExpressionFold(ctx ClientContext, expr Expression, outValue *Value) ErrorData {
 	var value C.duckdb_value
 	errorData := C.duckdb_expression_fold(ctx.data(), expr.data(), &value)
 	outValue.Ptr = unsafe.Pointer(value)
 	if debugMode {
 		incrAllocCount("v")
+		incrAllocCount("errorData")
 	}
 	return ErrorData{
 		Ptr: unsafe.Pointer(errorData),
