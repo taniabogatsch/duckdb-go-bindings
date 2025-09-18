@@ -3462,23 +3462,32 @@ func AppenderCreateExt(conn Connection, catalog string, schema string, table str
 
 // AppenderCreateQuery wraps duckdb_appender_create_query.
 // outAppender must be destroyed with AppenderDestroy.
-func AppenderCreateQuery(conn Connection, query string, columnCount IdxT, types []LogicalType,
-	tableName string, columnNames []string, outAppender *Appender) State {
+func AppenderCreateQuery(conn Connection, query string, types []LogicalType, tableName string, columnNames []string, outAppender *Appender) State {
 	cQuery := C.CString(query)
 	defer Free(unsafe.Pointer(cQuery))
-	cTableName := C.CString(tableName)
-	defer Free(unsafe.Pointer(cTableName))
 
 	typesPtr := allocLogicalTypes(types)
 	defer Free(unsafe.Pointer(typesPtr))
 
-	namesPtr := allocNames(columnNames)
-	defer Free(unsafe.Pointer(namesPtr))
-	count := IdxT(len(columnNames))
-	defer C.duckdb_go_bindings_free_names(namesPtr, count)
+	// The table name is optional.
+	cTableName := unsafe.Pointer(nil)
+	if tableName != "" {
+		cTableName = unsafe.Pointer(C.CString(tableName))
+	}
+	defer Free(cTableName)
 
+	// Column names are optional.
+	namesPtr := unsafe.Pointer(nil)
+	countNames := IdxT(len(columnNames))
+	if countNames > 0 {
+		namesPtr = unsafe.Pointer(allocNames(columnNames))
+	}
+	defer Free(namesPtr)
+	defer C.duckdb_go_bindings_free_names((**C.char)(namesPtr), countNames)
+
+	columnCount := IdxT(len(types))
 	var appender C.duckdb_appender
-	state := C.duckdb_appender_create_query(conn.data(), cQuery, columnCount, typesPtr, cTableName, namesPtr, &appender)
+	state := C.duckdb_appender_create_query(conn.data(), cQuery, columnCount, typesPtr, (*C.char)(cTableName), (**C.char)(namesPtr), &appender)
 	outAppender.Ptr = unsafe.Pointer(appender)
 	if debugMode {
 		incrAllocCount("appender")
