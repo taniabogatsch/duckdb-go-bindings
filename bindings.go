@@ -3918,11 +3918,7 @@ func incrAllocCount(k string) {
 		allocCounts.m = make(map[string]int)
 	}
 
-	if _, ok := allocCounts.m[k]; ok {
-		allocCounts.m[k]++
-	} else {
-		allocCounts.m[k] = 1
-	}
+	allocCounts.m[k]++
 }
 
 func decrAllocCount(k string) {
