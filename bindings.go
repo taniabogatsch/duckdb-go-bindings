@@ -462,7 +462,6 @@ func DestroyBlob(b *Blob) {
 		decrAllocCount("blob")
 	}
 	Free(b.data)
-	b = nil
 }
 
 // DestroyBit destroys the data field of duckdb_bit.
@@ -474,7 +473,6 @@ func DestroyBit(b *Bit) {
 		decrAllocCount("bit")
 	}
 	Free(unsafe.Pointer(b.data))
-	b = nil
 }
 
 // DestroyBigNum destroys the data field of duckdb_bignum.
@@ -486,7 +484,6 @@ func DestroyBigNum(i *BigNum) {
 		decrAllocCount("bigNum")
 	}
 	Free(unsafe.Pointer(i.data))
-	i = nil
 }
 
 // Types with internal pointers:
