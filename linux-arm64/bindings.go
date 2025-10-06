@@ -461,8 +461,7 @@ func DestroyBlob(b *Blob) {
 	if debugMode {
 		decrAllocCount("blob")
 	}
-	Free(unsafe.Pointer(b.data))
-	b = nil
+	Free(b.data)
 }
 
 // DestroyBit destroys the data field of duckdb_bit.
@@ -474,7 +473,6 @@ func DestroyBit(b *Bit) {
 		decrAllocCount("bit")
 	}
 	Free(unsafe.Pointer(b.data))
-	b = nil
 }
 
 // DestroyBigNum destroys the data field of duckdb_bignum.
@@ -486,7 +484,6 @@ func DestroyBigNum(i *BigNum) {
 		decrAllocCount("bigNum")
 	}
 	Free(unsafe.Pointer(i.data))
-	i = nil
 }
 
 // Types with internal pointers:
@@ -1578,7 +1575,7 @@ func BindVarcharLength(preparedStmt PreparedStatement, index IdxT, v string, len
 
 func BindBlob(preparedStmt PreparedStatement, index IdxT, v []byte) State {
 	cBytes := C.CBytes(v)
-	defer Free(unsafe.Pointer(cBytes))
+	defer Free(cBytes)
 	return C.duckdb_bind_blob(preparedStmt.data(), index, cBytes, IdxT(len(v)))
 }
 
@@ -2803,8 +2800,7 @@ func VectorGetColumnType(vec Vector) LogicalType {
 }
 
 func VectorGetData(vec Vector) unsafe.Pointer {
-	ptr := C.duckdb_vector_get_data(vec.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_vector_get_data(vec.data())
 }
 
 func VectorGetValidity(vec Vector) unsafe.Pointer {
@@ -2992,18 +2988,15 @@ func RegisterScalarFunction(conn Connection, f ScalarFunction) State {
 }
 
 func ScalarFunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_scalar_function_get_extra_info(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_scalar_function_get_extra_info(info.data())
 }
 
 func ScalarFunctionBindGetExtraInfo(info BindInfo) unsafe.Pointer {
-	ptr := C.duckdb_scalar_function_bind_get_extra_info(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_scalar_function_bind_get_extra_info(info.data())
 }
 
 func ScalarFunctionGetBindData(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_scalar_function_get_bind_data(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_scalar_function_get_bind_data(info.data())
 }
 
 // ScalarFunctionGetClientContext wraps duckdb_scalar_function_get_client_context.
@@ -3212,8 +3205,7 @@ func RegisterTableFunction(conn Connection, f TableFunction) State {
 // ------------------------------------------------------------------ //
 
 func BindGetExtraInfo(info BindInfo) unsafe.Pointer {
-	ptr := C.duckdb_bind_get_extra_info(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_bind_get_extra_info(info.data())
 }
 
 // TableFunctionGetClientContext wraps duckdb_table_function_get_client_context.
@@ -3283,13 +3275,11 @@ func BindSetError(info BindInfo, err string) {
 // ------------------------------------------------------------------ //
 
 func InitGetExtraInfo(info InitInfo) unsafe.Pointer {
-	ptr := C.duckdb_init_get_extra_info(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_init_get_extra_info(info.data())
 }
 
 func InitGetBindData(info InitInfo) unsafe.Pointer {
-	ptr := C.duckdb_init_get_bind_data(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_init_get_bind_data(info.data())
 }
 
 func InitSetInitData(info InitInfo, initDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
@@ -3320,23 +3310,19 @@ func InitSetError(info InitInfo, err string) {
 // ------------------------------------------------------------------ //
 
 func FunctionGetExtraInfo(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_function_get_extra_info(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_function_get_extra_info(info.data())
 }
 
 func FunctionGetBindData(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_function_get_bind_data(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_function_get_bind_data(info.data())
 }
 
 func FunctionGetInitData(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_function_get_init_data(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_function_get_init_data(info.data())
 }
 
 func FunctionGetLocalInitData(info FunctionInfo) unsafe.Pointer {
-	ptr := C.duckdb_function_get_local_init_data(info.data())
-	return unsafe.Pointer(ptr)
+	return C.duckdb_function_get_local_init_data(info.data())
 }
 
 func FunctionSetError(info FunctionInfo, err string) {
@@ -3918,11 +3904,7 @@ func incrAllocCount(k string) {
 		allocCounts.m = make(map[string]int)
 	}
 
-	if _, ok := allocCounts.m[k]; ok {
-		allocCounts.m[k]++
-	} else {
-		allocCounts.m[k] = 1
-	}
+	allocCounts.m[k]++
 }
 
 func decrAllocCount(k string) {
