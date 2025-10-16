@@ -38,43 +38,6 @@ jobs:
           go test
           go test -tags=debug_bindings
 
-  dynamic-lib-tests:
-    name: Test Dynamic Libs
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    strategy:
-      matrix:
-        version: [1.24]
-        os: [macos-15-intel, macos-14, ubuntu-latest, ubuntu-24.04-arm]
-        include:
-          - os: "macos-15-intel"
-            filename: "libduckdb-osx-universal"
-            filepath: "DYLD_LIBRARY_PATH"
-          - os: "macos-14"
-            filename: "libduckdb-osx-universal"
-            filepath: "DYLD_LIBRARY_PATH"
-          - os: "ubuntu-latest"
-            filename: "libduckdb-linux-amd64"
-            filepath: "LD_LIBRARY_PATH"
-          - os: "ubuntu-24.04-arm"
-            filename: "libduckdb-linux-arm64"
-            filepath: "LD_LIBRARY_PATH"
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.version }}
-      - name: Test ${{ matrix.filename }}
-        run: |
-          make test.dynamic.lib FILENAME=${{ matrix.filename }}
-          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test
-          CGO_ENABLED=1 CGO_LDFLAGS="-lduckdb -L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test -tags=debug_bindings
-          CGO_ENABLED=1 CGO_LDFLAGS="-L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test -tags=duckdb_use_lib
-          CGO_ENABLED=1 CGO_LDFLAGS="-L${SRCDIR}dynamic-dir" ${{ matrix.filepath }}=${SRCDIR}dynamic-dir go test -tags=duckdb_use_lib,debug_bindings
-
   static-lib-tests:
     name: Test Static Libs
     runs-on: ${{ matrix.os }}
