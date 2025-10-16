@@ -3648,10 +3648,26 @@ func ColumnHasDefault(desc TableDescription, index IdxT, outBool *bool) State {
 	return state
 }
 
+func TableDescriptionGetColumnCount(desc TableDescription) IdxT {
+	return C.duckdb_table_description_get_column_count(desc.data())
+}
+
 func TableDescriptionGetColumnName(desc TableDescription, index IdxT) string {
 	cName := C.duckdb_table_description_get_column_name(desc.data(), index)
 	defer Free(unsafe.Pointer(cName))
 	return C.GoString(cName)
+}
+
+// TableDescriptionGetColumnType wraps duckdb_table_description_get_column_type.
+// The return value must be destroyed with DestroyLogicalType.
+func TableDescriptionGetColumnType(desc TableDescription, index IdxT) LogicalType {
+	logicalType := C.duckdb_table_description_get_column_type(desc.data(), index)
+	if debugMode {
+		incrAllocCount("logicalType")
+	}
+	return LogicalType{
+		Ptr: unsafe.Pointer(logicalType),
+	}
 }
 
 // ------------------------------------------------------------------ //
