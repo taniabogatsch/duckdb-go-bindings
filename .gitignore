@@ -1,1 +1,4 @@
 .idea
+scripts/artifacts
+scripts/duckdb-go-bindings
+.DS_Store
