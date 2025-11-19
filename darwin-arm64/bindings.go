@@ -525,6 +525,7 @@ type Result struct {
 // *duckdb_table_function_t
 // *duckdb_cast_function_t
 // *duckdb_replacement_callback_t
+// *duckdb_logger_write_log_entry_t
 
 // NOTE: We export the Ptr of each wrapped type pointer to allow (void *) typedef's of callback functions.
 // See https://golang.org/issue/19837 and https://golang.org/issue/19835.
@@ -835,6 +836,15 @@ type ArrowOptions struct {
 
 func (options *ArrowOptions) data() C.duckdb_arrow_options {
 	return C.duckdb_arrow_options(options.Ptr)
+}
+
+// LogStorage wraps *duckdb_log_storage.
+type LogStorage struct {
+	Ptr unsafe.Pointer
+}
+
+func (info *LogStorage) data() C.duckdb_log_storage {
+	return C.duckdb_log_storage(info.Ptr)
 }
 
 // ------------------------------------------------------------------ //
@@ -3680,96 +3690,6 @@ func TableDescriptionGetColumnType(desc TableDescription, index IdxT) LogicalTyp
 	}
 }
 
-// ------------------------------------------------------------------ //
-// Arrow Interface (entire interface has deprecation notice)
-// ------------------------------------------------------------------ //
-
-// TODO:
-// duckdb_to_arrow_schema
-// duckdb_data_chunk_to_arrow
-// duckdb_schema_from_arrow
-// duckdb_data_chunk_from_arrow
-
-// DestroyArrowConvertedSchema wraps duckdb_destroy_arrow_converted_schema.
-func DestroyArrowConvertedSchema(schema *ArrowConvertedSchema) {
-	if schema.Ptr == nil {
-		return
-	}
-	if debugMode {
-		decrAllocCount("arrowConvertedSchema")
-	}
-	data := schema.data()
-	C.duckdb_destroy_arrow_converted_schema(&data)
-	schema.Ptr = nil
-}
-
-// TODO:
-// duckdb_query_arrow
-
-func QueryArrowSchema(arrow Arrow, outSchema *ArrowSchema) State {
-	return C.duckdb_query_arrow_schema(arrow.data(), (*C.duckdb_arrow_schema)(outSchema.Ptr))
-}
-
-// TODO:
-// duckdb_prepared_arrow_schema
-// duckdb_result_arrow_array
-
-func QueryArrowArray(arrow Arrow, outArray *ArrowArray) State {
-	return C.duckdb_query_arrow_array(arrow.data(), (*C.duckdb_arrow_array)(outArray.Ptr))
-}
-
-// TODO:
-// duckdb_arrow_column_count
-
-func ArrowRowCount(arrow Arrow) IdxT {
-	return C.duckdb_arrow_row_count(arrow.data())
-}
-
-// TODO:
-// duckdb_arrow_rows_changed
-
-func QueryArrowError(arrow Arrow) string {
-	err := C.duckdb_query_arrow_error(arrow.data())
-	return C.GoString(err)
-}
-
-// DestroyArrow wraps duckdb_destroy_arrow.
-func DestroyArrow(arrow *Arrow) {
-	if arrow.Ptr == nil {
-		return
-	}
-	if debugMode {
-		decrAllocCount("arrow")
-	}
-	data := arrow.data()
-	C.duckdb_destroy_arrow(&data)
-	arrow.Ptr = nil
-}
-
-// TODO:
-// duckdb_destroy_arrow_stream
-
-// ExecutePreparedArrow wraps duckdb_execute_prepared_arrow.
-// outArrow must be destroyed with DestroyArrow.
-func ExecutePreparedArrow(preparedStmt PreparedStatement, outArrow *Arrow) State {
-	var arrow C.duckdb_arrow
-	state := C.duckdb_execute_prepared_arrow(preparedStmt.data(), &arrow)
-	outArrow.Ptr = unsafe.Pointer(arrow)
-	if debugMode {
-		incrAllocCount("arrow")
-	}
-	return state
-}
-
-func ArrowScan(conn Connection, table string, stream ArrowStream) State {
-	cTable := C.CString(table)
-	defer Free(unsafe.Pointer(cTable))
-	return C.duckdb_arrow_scan(conn.data(), cTable, stream.data())
-}
-
-// TODO:
-// duckdb_arrow_array_scan
-
 //===--------------------------------------------------------------------===//
 // Threading Information
 //===--------------------------------------------------------------------===//
@@ -3870,6 +3790,46 @@ func ExpressionFold(ctx ClientContext, expr Expression, outValue *Value) ErrorDa
 	return ErrorData{
 		Ptr: unsafe.Pointer(errorData),
 	}
+}
+
+// ------------------------------------------------------------------ //
+// Logging Interface
+// ------------------------------------------------------------------ //
+
+// CreateLogStorage wraps duckdb_create_log_storage.
+// The return value must be destroyed with DestroyLogStorage.
+func CreateLogStorage() LogStorage {
+	logStorage := C.duckdb_create_log_storage()
+	if debugMode {
+		incrAllocCount("logStorage")
+	}
+	return LogStorage{
+		Ptr: unsafe.Pointer(logStorage),
+	}
+}
+
+// DestroyLogStorage wraps duckdb_destroy_log_storage.
+func DestroyLogStorage(logStorage *LogStorage) {
+	if logStorage.Ptr == nil {
+		return
+	}
+	if debugMode {
+		decrAllocCount("logStorage")
+	}
+	data := logStorage.data()
+	C.duckdb_destroy_log_storage(&data)
+	logStorage.Ptr = nil
+}
+
+func LogStorageSetWriteLogEntry(logStorage LogStorage, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_logger_write_log_entry_t(callbackPtr)
+	C.duckdb_log_storage_set_write_log_entry(logStorage.data(), callback)
+}
+
+func RegisterLogStorage(db Database, name string, logStorage LogStorage) {
+	cName := C.CString(name)
+	defer Free(unsafe.Pointer(cName))
+	C.duckdb_register_log_storage(db.data(), cName, logStorage.data())
 }
 
 // ------------------------------------------------------------------ //

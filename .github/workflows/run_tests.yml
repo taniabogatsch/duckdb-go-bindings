@@ -36,7 +36,7 @@ jobs:
         run: |
           cd ${{ matrix.dir }}
           go test
-          go test -tags=debug_bindings
+          go test -tags=debug_bindings,duckdb_arrow
 
   static-lib-tests:
     name: Test Static Libs
@@ -72,5 +72,7 @@ jobs:
         run: |
           CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test
           CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -tags=debug_bindings
+          CGO_ENABLED=1 CPPFLAGS="-DDUCKDB_STATIC_BUILD" CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -tags=debug_bindings,duckdb_arrow
           CGO_ENABLED=1 CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -tags=duckdb_use_static_lib
           CGO_ENABLED=1 CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -tags=duckdb_use_static_lib,debug_bindings
+          CGO_ENABLED=1 CGO_LDFLAGS="${{ matrix.flags }} -L${SRCDIR}${{ matrix.dir }}/" go test -tags=duckdb_use_static_lib,debug_bindings,duckdb_arrow
