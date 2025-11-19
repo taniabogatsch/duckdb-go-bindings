@@ -3826,10 +3826,19 @@ func LogStorageSetWriteLogEntry(logStorage LogStorage, callbackPtr unsafe.Pointe
 	C.duckdb_log_storage_set_write_log_entry(logStorage.data(), callback)
 }
 
-func RegisterLogStorage(db Database, name string, logStorage LogStorage) {
+func LogStorageSetExtraData(logStorage LogStorage, extraDataPtr unsafe.Pointer, callbackPtr unsafe.Pointer) {
+	callback := C.duckdb_delete_callback_t(callbackPtr)
+	C.duckdb_log_storage_set_extra_data(logStorage.data(), extraDataPtr, callback)
+}
+
+func LogStorageSetName(logStorage LogStorage, name string) {
 	cName := C.CString(name)
 	defer Free(unsafe.Pointer(cName))
-	C.duckdb_register_log_storage(db.data(), cName, logStorage.data())
+	C.duckdb_log_storage_set_name(logStorage.data(), cName)
+}
+
+func RegisterLogStorage(db Database, logStorage LogStorage) State {
+	return C.duckdb_register_log_storage(db.data(), logStorage.data())
 }
 
 // ------------------------------------------------------------------ //
