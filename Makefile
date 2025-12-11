@@ -8,10 +8,6 @@ fetch.static.libs:
 	unzip ${FILENAME}.zip && \
 	rm -f ${FILENAME}.zip
 
-update.binding:
-	rm -f ${DIRECTORY}/bindings*.go && \
-	cp bindings*.go ${DIRECTORY}/.
-
 test.dynamic.lib:
 	mkdir dynamic-dir && \
 	cd dynamic-dir && \
