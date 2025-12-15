@@ -3,6 +3,24 @@ module github.com/duckdb/duckdb-go-bindings
 go 1.24
 
 require (
+	github.com/duckdb/duckdb-go-bindings/lib/darwin-amd64 v0.2.0
+	github.com/duckdb/duckdb-go-bindings/lib/darwin-arm64 v0.2.0
+	github.com/duckdb/duckdb-go-bindings/lib/linux-amd64 v0.2.0
+	github.com/duckdb/duckdb-go-bindings/lib/linux-arm64 v0.2.0
+	github.com/duckdb/duckdb-go-bindings/lib/windows-amd64 v0.2.0
+)
+
+// Local dev/CI only.
+// TODO: Remove this block before tagging a release (otherwise consumers will fail to fetch)
+replace (
+	github.com/duckdb/duckdb-go-bindings/lib/darwin-amd64 => ./lib/darwin-amd64
+	github.com/duckdb/duckdb-go-bindings/lib/darwin-arm64 => ./lib/darwin-arm64
+	github.com/duckdb/duckdb-go-bindings/lib/linux-amd64 => ./lib/linux-amd64
+	github.com/duckdb/duckdb-go-bindings/lib/linux-arm64 => ./lib/linux-arm64
+	github.com/duckdb/duckdb-go-bindings/lib/windows-amd64 => ./lib/windows-amd64
+)
+
+require (
 	github.com/apache/arrow-go/v18 v18.4.1
 	github.com/stretchr/testify v1.11.0
 )

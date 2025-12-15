@@ -49,11 +49,17 @@ Older versions require platform-specific imports (e.g., `github.com/duckdb/duckd
 5. Open a PR.
 6. Wait for all tests to pass.
 7. Merge the PR into `main`.
-8. Publish the tag by incrementing the latest tagged release.
+8. Publish tags for the root module and the platform submodules by incrementing the latest tagged release.
 
 ```
-git tag <tagname>
-git push origin <tagname>
+VERSION=v0.2.0
+git tag "${VERSION}"
+git tag "lib/darwin-amd64/${VERSION}"
+git tag "lib/darwin-arm64/${VERSION}"
+git tag "lib/linux-amd64/${VERSION}"
+git tag "lib/linux-arm64/${VERSION}"
+git tag "lib/windows-amd64/${VERSION}"
+git push origin "${VERSION}" "lib/darwin-amd64/${VERSION}" "lib/darwin-arm64/${VERSION}" "lib/linux-amd64/${VERSION}" "lib/linux-arm64/${VERSION}" "lib/windows-amd64/${VERSION}"
 ```
 
 Example PR: https://github.com/duckdb/duckdb-go-bindings/pull/19.
