@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.version }}
+      - name: Setup workspace
+        run: cp go.work.dev go.work
       - name: Test ${{ matrix.os }}
         run: |
           go test

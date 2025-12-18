@@ -40,6 +40,16 @@ Older versions require platform-specific imports (e.g., `github.com/duckdb/duckd
 | v1.2.1         | v0.1.13 | v0.1.8  | v0.1.8  | v0.1.8  |
 | v1.2.0         | v0.1.10 | v0.1.5  | v0.1.5  | v0.1.5  |
 
+## Local Development
+
+To develop locally, copy the workspace template file:
+
+```bash
+cp go.work.dev go.work
+```
+
+This sets up Go workspaces to use the local lib/* submodules instead of fetching from the module proxy.
+
 ## Releasing a new duckdb version
 
 1. Create a new branch and update the `DUCKDB_VERSION` in the `Makefile`.
