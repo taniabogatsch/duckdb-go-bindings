@@ -15,13 +15,13 @@ Minimum Go version: 1.24.
 
 ## Releases
 
-### Single module (v0.2.0+)
+### Single module (v0.3.0+)
 
-Starting with v0.2.0, the module includes pre-built static libraries for all platforms. Simply import `github.com/duckdb/duckdb-go-bindings`.
+Starting with v0.3.0, the module includes pre-built static libraries for all platforms. Simply import `github.com/duckdb/duckdb-go-bindings`.
 
 | duckdb version | module version |
 | -------------- | -------------- |
-| v1.4.3         | v0.2.0         |
+| v1.4.3         | v0.3.0         |
 
 ### Legacy per-platform submodules (v0.1.x)
 
@@ -52,7 +52,7 @@ Older versions require platform-specific imports (e.g., `github.com/duckdb/duckd
 8. Publish tags for the root module and the platform submodules by incrementing the latest tagged release.
 
 ```
-VERSION=v0.2.0
+VERSION=v0.3.0
 git tag "${VERSION}"
 git tag "lib/darwin-amd64/${VERSION}"
 git tag "lib/darwin-arm64/${VERSION}"
