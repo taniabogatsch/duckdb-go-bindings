@@ -6,8 +6,7 @@ fetch.static.libs:
 	rm -f *.a duckdb.h && \
 	unzip ${FILENAME}.zip && \
 	rm -f ${FILENAME}.zip && \
-	if [ -n "${COPY_HEADER}" ]; then cp duckdb.h ../../include/; fi && \
-	rm -f duckdb.h
+	if [ -n "${COPY_HEADER}" ]; then cp duckdb.h ../../include/; fi
 
 test.dynamic.lib:
 	mkdir dynamic-dir && \
