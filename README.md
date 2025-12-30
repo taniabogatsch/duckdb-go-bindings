@@ -50,6 +50,12 @@ cp go.work.dev go.work
 
 This sets up Go workspaces to use the local lib/* submodules instead of fetching from the module proxy.
 
+To update `go.sum` with checksums from the module proxy (e.g., before releasing), temporarily disable the workspace:
+
+```bash
+GOWORK=off go mod tidy
+```
+
 ## Releasing a new duckdb version
 
 1. Create a new branch and update the `DUCKDB_VERSION` in the `Makefile`.
