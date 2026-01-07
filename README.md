@@ -48,34 +48,45 @@ To develop locally, copy the workspace template file:
 cp go.work.dev go.work
 ```
 
-This sets up Go workspaces to use the local lib/* submodules instead of fetching from the module proxy.
+This sets up Go workspaces to use the local lib/\* submodules instead of fetching from the module proxy.
 
-To update `go.sum` with checksums from the module proxy (e.g., before releasing), temporarily disable the workspace:
-
-```bash
-GOWORK=off go mod tidy
-```
-
-## Releasing a new duckdb version
+## Releasing a new DuckDB version
 
 1. Create a new branch and update the `DUCKDB_VERSION` in the `Makefile`.
-2. Invoke the `Fetch and Push Libs` workflow on the new branch.
-3. Update the `Releases` table in the `README.md`.
+2. Invoke the `Fetch and Push Libs` workflow on the new branch (it commits fetched libs to the branch; it does not tag).
+3. Update the `Releases` table in the `README.md` above.
 4. If the header (`duckdb.h`) has changes (non-bugfix release), add all changes (new types, functions, etc.) to the bindings.
 5. Open a PR.
 6. Wait for all tests to pass.
-7. Merge the PR into `main`.
-8. Publish tags for the root module and the platform submodules by incrementing the latest tagged release.
+7. Merge the PR into `main` (direct pushes to `main` are not allowed).
+8. Publish tags for the lib submodules first, then update the root module deps, then tag the root module (push order matters). The root module deps update must go through a PR (no direct pushes).
 
 ```
-VERSION=v0.3.0
-git tag "${VERSION}"
+VERSION=v0.3.1
+
+# 1) Tag + push the lib/* submodules first.
 git tag "lib/darwin-amd64/${VERSION}"
 git tag "lib/darwin-arm64/${VERSION}"
 git tag "lib/linux-amd64/${VERSION}"
 git tag "lib/linux-arm64/${VERSION}"
 git tag "lib/windows-amd64/${VERSION}"
-git push origin "${VERSION}" "lib/darwin-amd64/${VERSION}" "lib/darwin-arm64/${VERSION}" "lib/linux-amd64/${VERSION}" "lib/linux-arm64/${VERSION}" "lib/windows-amd64/${VERSION}"
+git push origin "lib/darwin-amd64/${VERSION}" "lib/darwin-arm64/${VERSION}" "lib/linux-amd64/${VERSION}" "lib/linux-arm64/${VERSION}" "lib/windows-amd64/${VERSION}"
+
+# 2) Bump the root module to use the new lib/* versions and update go.sum.
+# Use GOPROXY=direct to avoid waiting for proxies to index fresh tags.
+GOWORK=off GOPROXY=direct go get \
+  "github.com/duckdb/duckdb-go-bindings/lib/darwin-amd64@${VERSION}" \
+  "github.com/duckdb/duckdb-go-bindings/lib/darwin-arm64@${VERSION}" \
+  "github.com/duckdb/duckdb-go-bindings/lib/linux-amd64@${VERSION}" \
+  "github.com/duckdb/duckdb-go-bindings/lib/linux-arm64@${VERSION}" \
+  "github.com/duckdb/duckdb-go-bindings/lib/windows-amd64@${VERSION}"
+GOWORK=off GOPROXY=direct go mod tidy
+git commit -am "Update lib deps to ${VERSION}"
+# Open a PR with this commit and merge it before tagging the root module.
+
+# 3) Tag + push the root module last.
+git tag "${VERSION}"
+git push origin "${VERSION}"
 ```
 
 Example PR: https://github.com/duckdb/duckdb-go-bindings/pull/19.
