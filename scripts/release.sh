@@ -27,8 +27,8 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${root_dir}"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
-if [ "${current_branch}" != "main" ]; then
-  echo "error: release must be run on main (current: ${current_branch})" >&2
+if [ "${current_branch}" != "main" ] && [[ "${current_branch}" != v1.* ]]; then
+  echo "error: release must be run on main or a v1.* branch" >&2
   exit 1
 fi
 
