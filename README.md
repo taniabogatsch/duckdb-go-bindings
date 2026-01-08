@@ -55,41 +55,24 @@ This sets up Go workspaces to use the local lib/\* submodules instead of fetchin
 1. Create a new branch and update the `DUCKDB_VERSION` in the `Makefile`.
 2. Invoke the `Fetch and Push Libs` workflow on the new branch (it commits fetched libs to the branch; it does not tag).
 3. Update the `Releases` table in the `README.md` above.
-4. If the header (`duckdb.h`) has changes (non-bugfix release), add all changes (new types, functions, etc.) to the bindings.
+4. If the header (`duckdb.h`) has changes, add all changes (new types, functions, etc.) to the bindings.
 5. Open a PR.
 6. Wait for all tests to pass.
 7. Merge the PR into `main` (direct pushes to `main` are not allowed).
-8. Publish tags for the lib submodules first, then update the root module deps, then tag the root module (push order matters). The root module deps update must go through a PR (no direct pushes).
+8. Publish tags using the release script (re-entrant, safe to run multiple times):
 
-```
-VERSION=v0.3.1
-
-# 1) Tag + push the lib/* submodules first.
-git tag "lib/darwin-amd64/${VERSION}"
-git tag "lib/darwin-arm64/${VERSION}"
-git tag "lib/linux-amd64/${VERSION}"
-git tag "lib/linux-arm64/${VERSION}"
-git tag "lib/windows-amd64/${VERSION}"
-git push origin "lib/darwin-amd64/${VERSION}" "lib/darwin-arm64/${VERSION}" "lib/linux-amd64/${VERSION}" "lib/linux-arm64/${VERSION}" "lib/windows-amd64/${VERSION}"
-
-# 2) Bump the root module to use the new lib/* versions and update go.sum.
-# Use GOPROXY=direct to avoid waiting for proxies to index fresh tags.
-GOWORK=off GOPROXY=direct go get \
-  "github.com/duckdb/duckdb-go-bindings/lib/darwin-amd64@${VERSION}" \
-  "github.com/duckdb/duckdb-go-bindings/lib/darwin-arm64@${VERSION}" \
-  "github.com/duckdb/duckdb-go-bindings/lib/linux-amd64@${VERSION}" \
-  "github.com/duckdb/duckdb-go-bindings/lib/linux-arm64@${VERSION}" \
-  "github.com/duckdb/duckdb-go-bindings/lib/windows-amd64@${VERSION}"
-GOWORK=off GOPROXY=direct go mod tidy
-git commit -am "Update lib deps to ${VERSION}"
-# Open a PR with this commit and merge it before tagging the root module.
-
-# 3) Tag + push the root module last.
-git tag "${VERSION}"
-git push origin "${VERSION}"
+```bash
+./scripts/release.sh v0.3.2           # pushes to 'origin'
+./scripts/release.sh v0.3.2 upstream  # pushes to custom remote
 ```
 
-Example PR: https://github.com/duckdb/duckdb-go-bindings/pull/19.
+The script handles:
+
+- Tagging and pushing lib/\* submodules
+- Updating root module deps (stops for PR if changes needed)
+- Tagging and pushing root module
+
+Run it again after merging the deps PR to complete the release.
 
 ## Installation
 
