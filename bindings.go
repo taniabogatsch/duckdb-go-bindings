@@ -1283,6 +1283,12 @@ func ResultGetChunk(res Result, index IdxT) DataChunk {
 	}
 }
 
+// ResultIsStreaming wraps duckdb_result_is_streaming.
+// Deprecated: ResultIsStreaming is deprecated.
+func ResultIsStreaming(res Result) bool {
+	return bool(C.duckdb_result_is_streaming(res.data))
+}
+
 // Deprecated: See C API documentation.
 func ResultChunkCount(res Result) IdxT {
 	return C.duckdb_result_chunk_count(res.data)
@@ -1647,6 +1653,16 @@ func ExecutePrepared(preparedStmt PreparedStatement, outRes *Result) State {
 	return C.duckdb_execute_prepared(preparedStmt.data(), &outRes.data)
 }
 
+// ExecutePreparedStreaming wraps duckdb_execute_prepared_streaming.
+// outRes must be destroyed with DestroyResult.
+// Deprecated: ExecutePreparedStreaming is deprecated.
+func ExecutePreparedStreaming(preparedStmt PreparedStatement, outRes *Result) State {
+	if debugMode {
+		incrAllocCount("res")
+	}
+	return C.duckdb_execute_prepared_streaming(preparedStmt.data(), &outRes.data)
+}
+
 // ------------------------------------------------------------------ //
 // Extract Statements
 // ------------------------------------------------------------------ //
@@ -1705,6 +1721,19 @@ func DestroyExtracted(extractedStmts *ExtractedStatements) {
 func PendingPrepared(preparedStmt PreparedStatement, outPendingRes *PendingResult) State {
 	var pendingRes C.duckdb_pending_result
 	state := C.duckdb_pending_prepared(preparedStmt.data(), &pendingRes)
+	outPendingRes.Ptr = unsafe.Pointer(pendingRes)
+	if debugMode {
+		incrAllocCount("pendingRes")
+	}
+	return state
+}
+
+// PendingPreparedStreaming wraps duckdb_pending_prepared_streaming.
+// outPendingRes must be destroyed with DestroyPending.
+// Deprecated: PendingPreparedStreaming is deprecated.
+func PendingPreparedStreaming(preparedStmt PreparedStatement, outPendingRes *PendingResult) State {
+	var pendingRes C.duckdb_pending_result
+	state := C.duckdb_pending_prepared_streaming(preparedStmt.data(), &pendingRes)
 	outPendingRes.Ptr = unsafe.Pointer(pendingRes)
 	if debugMode {
 		incrAllocCount("pendingRes")
@@ -3721,8 +3750,23 @@ func TableDescriptionGetColumnName(desc TableDescription, index IdxT) string {
 // Streaming Result Interface
 //===--------------------------------------------------------------------===//
 
-// TODO:
-// duckdb_stream_fetch_chunk (deprecation notice)
+// StreamFetchChunk wraps duckdb_stream_fetch_chunk.
+// Returns a data chunk from the streaming result.
+// The returned data chunk must be destroyed with DestroyDataChunk.
+// Returns a data chunk with size 0 when the result is exhausted.
+// Deprecated: StreamFetchChunk is deprecated.
+func StreamFetchChunk(res Result, outChunk *DataChunk) State {
+	chunk := C.duckdb_stream_fetch_chunk(res.data)
+	// duckdb_stream_fetch_chunk returns NULL if the result has an error.
+	if chunk == nil {
+		return StateError
+	}
+	outChunk.Ptr = unsafe.Pointer(chunk)
+	if debugMode {
+		incrAllocCount("chunk")
+	}
+	return StateSuccess
+}
 
 //===--------------------------------------------------------------------===//
 // Result Interface
