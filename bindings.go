@@ -889,8 +889,8 @@ type LogStorage struct {
 	Ptr unsafe.Pointer
 }
 
-func (info *LogStorage) data() C.duckdb_log_storage {
-	return C.duckdb_log_storage(info.Ptr)
+func (logStorage *LogStorage) data() C.duckdb_log_storage {
+	return C.duckdb_log_storage(logStorage.Ptr)
 }
 
 // ------------------------------------------------------------------ //
